@@ -1,0 +1,526 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   EDUPATH AI - ADVANCED DESIGN SYSTEM
+   Sophisticated & Minimal Neon Usage
+   ============================================ */
+
+:root {
+  /* Base Colors - Deep Blacks with Layered Depth */
+  --bg-base: #0A0A0F;
+  --bg-depth-1: #0E0E14;
+  --bg-depth-2: #141419;
+  --bg-depth-3: #1A1A22;
+  --bg-depth-4: #1E1E28;
+  
+  /* Neon Accents (Use Sparingly) */
+  --neon-primary: #00F771;
+  --neon-cyan: #00FFE0;
+  --neon-purple: #B794F6;
+  --neon-pink: #FF6B9D;
+  --neon-blue: #3B82F6;
+  --neon-orange: #F59E0B;
+  
+  /* Professional Grays */
+  --gray-50: #FAFAFA;
+  --gray-100: #F4F4F5;
+  --gray-200: #E4E4E7;
+  --gray-300: #D4D4D8;
+  --gray-400: #A1A1AA;
+  --gray-500: #71717A;
+  --gray-600: #52525B;
+  --gray-700: #3F3F46;
+  --gray-800: #27272A;
+  --gray-900: #18181B;
+  
+  /* Glass Effects */
+  --glass-bg: rgba(20, 20, 25, 0.7);
+  --glass-bg-light: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-hover: rgba(255, 255, 255, 0.15);
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
+  --shadow-glow-subtle: 0 0 20px rgba(0, 247, 113, 0.15);
+  --shadow-glow-medium: 0 0 30px rgba(0, 247, 113, 0.25);
+  --shadow-glow-strong: 0 0 50px rgba(0, 247, 113, 0.4);
+  
+  /* Text Colors */
+  --text-primary: #FFFFFF;
+  --text-secondary: #A1A1AA;
+  --text-muted: #71717A;
+  --text-dark: #18181B;
+}
+
+/* Light Theme */
+.light {
+  --bg-base: #FAFAFA;
+  --bg-depth-1: #FFFFFF;
+  --bg-depth-2: #F4F4F5;
+  --bg-depth-3: #E4E4E7;
+  --bg-depth-4: #D4D4D8;
+  
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-bg-light: rgba(0, 0, 0, 0.02);
+  --glass-border: rgba(0, 0, 0, 0.06);
+  --glass-border-hover: rgba(0, 0, 0, 0.12);
+  
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.16);
+  
+  --text-primary: #18181B;
+  --text-secondary: #52525B;
+  --text-muted: #71717A;
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-depth-1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gray-700);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-600);
+}
+
+/* ============================================
+   SELECTION
+   ============================================ */
+
+::selection {
+  background: rgba(0, 247, 113, 0.3);
+  color: var(--text-primary);
+}
+
+/* ============================================
+   BUTTON COMPONENTS
+   ============================================ */
+
+@layer components {
+  /* Hero Primary Button */
+  .btn-hero-primary {
+    @apply px-8 py-4 rounded-2xl font-bold text-base;
+    @apply flex items-center justify-center gap-3;
+    @apply transition-all duration-300;
+    background: linear-gradient(135deg, var(--neon-primary) 0%, var(--neon-cyan) 100%);
+    color: #000;
+    box-shadow: 0 10px 40px rgba(0, 247, 113, 0.4);
+  }
+  
+  .btn-hero-primary:hover {
+    transform: scale(1.03) translateY(-2px);
+    box-shadow: 0 15px 50px rgba(0, 247, 113, 0.5);
+  }
+  
+  /* Hero Secondary Button */
+  .btn-hero-secondary {
+    @apply px-8 py-4 rounded-2xl font-semibold text-base;
+    @apply flex items-center justify-center gap-3;
+    @apply transition-all duration-300;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+  }
+  
+  .btn-hero-secondary:hover {
+    transform: scale(1.03) translateY(-2px);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--glass-border-hover);
+  }
+  
+  /* Primary Button */
+  .btn-primary {
+    @apply px-6 py-3 rounded-xl font-semibold text-sm;
+    @apply flex items-center justify-center gap-2;
+    @apply transition-all duration-300;
+    background: var(--neon-primary);
+    color: #000;
+  }
+  
+  .btn-primary:hover {
+    box-shadow: var(--shadow-glow-subtle);
+    transform: translateY(-1px);
+  }
+  
+  /* Ghost Button */
+  .btn-ghost {
+    @apply px-6 py-3 rounded-xl font-medium text-sm;
+    @apply flex items-center justify-center gap-2;
+    @apply transition-all duration-300;
+    color: var(--text-secondary);
+  }
+  
+  .btn-ghost:hover {
+    color: var(--text-primary);
+    background: var(--glass-bg-light);
+  }
+  
+  /* Icon Button */
+  .btn-icon {
+    @apply w-11 h-11 rounded-xl;
+    @apply flex items-center justify-center;
+    @apply transition-all duration-300;
+    background: var(--glass-bg-light);
+    border: 1px solid var(--glass-border);
+  }
+  
+  .btn-icon:hover {
+    transform: scale(1.05);
+    border-color: var(--glass-border-hover);
+  }
+}
+
+/* ============================================
+   CARD COMPONENTS
+   ============================================ */
+
+@layer components {
+  /* Glass Card */
+  .card-glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 1.5rem;
+    box-shadow: var(--shadow-md);
+  }
+  
+  /* Bento Card */
+  .card-bento {
+    @apply relative rounded-3xl overflow-hidden;
+    @apply transition-all duration-300;
+    background: linear-gradient(135deg, var(--bg-depth-2) 0%, var(--bg-depth-3) 100%);
+    border: 1px solid var(--glass-border);
+  }
+  
+  .card-bento:hover {
+    transform: translateY(-4px);
+    border-color: rgba(0, 247, 113, 0.3);
+    box-shadow: var(--shadow-glow-subtle);
+  }
+  
+  /* Skill Card */
+  .card-skill {
+    @apply p-6 rounded-2xl cursor-pointer;
+    @apply transition-all duration-300;
+    background: var(--bg-depth-2);
+    border: 1px solid var(--glass-border);
+  }
+  
+  .card-skill:hover {
+    transform: scale(1.02) translateY(-4px);
+    border-color: rgba(0, 247, 113, 0.4);
+    box-shadow: var(--shadow-glow-subtle);
+  }
+  
+  /* Stat Card */
+  .card-stat {
+    @apply p-6 rounded-2xl;
+    background: var(--bg-depth-2);
+    border: 1px solid var(--glass-border);
+  }
+}
+
+/* ============================================
+   TEXT STYLES
+   ============================================ */
+
+@layer components {
+  /* Gradient Text */
+  .gradient-text {
+    background: linear-gradient(135deg, var(--neon-primary) 0%, var(--neon-cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Multi Gradient Text */
+  .gradient-text-multi {
+    background: linear-gradient(135deg, var(--neon-cyan) 0%, var(--neon-primary) 50%, var(--neon-purple) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Glow Text */
+  .text-glow {
+    text-shadow: 0 0 30px rgba(0, 247, 113, 0.5);
+  }
+}
+
+/* ============================================
+   FLOWCHART NODE STYLES
+   ============================================ */
+
+@layer components {
+  .node-locked {
+    @apply border-2 border-dashed rounded-xl p-4;
+    border-color: var(--gray-700);
+    background: rgba(39, 39, 42, 0.5);
+    color: var(--gray-600);
+  }
+  
+  .node-available {
+    @apply border-2 rounded-xl p-4;
+    border-color: var(--neon-cyan);
+    background: var(--bg-depth-2);
+    color: var(--text-primary);
+    box-shadow: 0 0 20px rgba(0, 255, 224, 0.2);
+  }
+  
+  .node-current {
+    @apply border-2 rounded-xl p-4;
+    border-color: var(--neon-primary);
+    background: linear-gradient(135deg, rgba(0, 247, 113, 0.15) 0%, var(--bg-depth-2) 100%);
+    box-shadow: 0 0 30px rgba(0, 247, 113, 0.3);
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  
+  .node-completed {
+    @apply border-2 rounded-xl p-4;
+    border-color: #22C55E;
+    background: rgba(34, 197, 94, 0.1);
+    color: #4ADE80;
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 247, 113, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(0, 247, 113, 0.4);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes particle-float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.5;
+  }
+  25% {
+    transform: translate(10px, -20px) scale(1.1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(-5px, -40px) scale(0.9);
+    opacity: 0.6;
+  }
+  75% {
+    transform: translate(-15px, -20px) scale(1.05);
+    opacity: 0.7;
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+.animate-particle {
+  animation: particle-float 15s ease-in-out infinite;
+}
+
+/* ============================================
+   FORM ELEMENTS
+   ============================================ */
+
+@layer components {
+  .input-glass {
+    @apply w-full px-4 py-3 rounded-xl text-base;
+    @apply transition-all duration-300;
+    @apply outline-none;
+    background: var(--bg-depth-2);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+  }
+  
+  .input-glass::placeholder {
+    color: var(--text-muted);
+  }
+  
+  .input-glass:focus {
+    border-color: var(--neon-primary);
+    box-shadow: 0 0 0 3px rgba(0, 247, 113, 0.1);
+  }
+  
+  .input-search {
+    @apply w-full pl-12 pr-4 py-4 rounded-2xl text-base;
+    @apply transition-all duration-300;
+    @apply outline-none;
+    background: var(--bg-depth-2);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+  }
+  
+  .input-search:focus {
+    border-color: var(--neon-primary);
+    box-shadow: 0 0 0 4px rgba(0, 247, 113, 0.1);
+  }
+}
+
+/* ============================================
+   BADGE STYLES
+   ============================================ */
+
+@layer components {
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold;
+  }
+  
+  .badge-primary {
+    background: rgba(0, 247, 113, 0.15);
+    color: var(--neon-primary);
+    border: 1px solid rgba(0, 247, 113, 0.3);
+  }
+  
+  .badge-easy {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ADE80;
+  }
+  
+  .badge-medium {
+    background: rgba(245, 158, 11, 0.15);
+    color: #FBBF24;
+  }
+  
+  .badge-hard {
+    background: rgba(239, 68, 68, 0.15);
+    color: #F87171;
+  }
+}
+
+/* ============================================
+   PROGRESS BAR
+   ============================================ */
+
+@layer components {
+  .progress-bar {
+    @apply h-2 rounded-full overflow-hidden;
+    background: var(--bg-depth-3);
+  }
+  
+  .progress-bar-fill {
+    @apply h-full rounded-full;
+    background: linear-gradient(90deg, var(--neon-primary) 0%, var(--neon-cyan) 100%);
+    transition: width 0.5s ease-out;
+  }
+}
+
+/* ============================================
+   NAVBAR GLASSMORPHISM
+   ============================================ */
+
+.navbar-glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================
+   UTILITIES
+   ============================================ */
+
+.bg-grid-pattern {
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.bg-gradient-radial {
+  background: radial-gradient(ellipse at center, var(--neon-primary) 0%, transparent 70%);
+}
+
+.backdrop-blur-glass {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Focus visible styles */
+.focus-ring:focus-visible {
+  outline: 2px solid var(--neon-primary);
+  outline-offset: 2px;
+}
