@@ -30,6 +30,18 @@ export default function Navbar() {
     setUserMenu(false) 
   }, [pathname])
 
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [mobileOpen])
+
   if (pathname?.startsWith('/auth') || pathname === '/onboarding') return null
 
   const links = [
@@ -50,12 +62,14 @@ export default function Navbar() {
         style={{ 
           background: scrolled ? (isDark ? 'rgba(9,9,11,0.95)' : 'rgba(255,255,255,0.95)') : 'transparent',
           backdropFilter: scrolled ? 'blur(12px)' : 'none',
-          borderBottom: scrolled ? `1px solid ${isDark ? '#27272A' : '#E4E4E7'}` : 'none'
+          borderBottom: scrolled ? '1px solid ' + (isDark ? '#27272A' : '#E4E4E7') : 'none'
         }}
       >
         <nav className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="text-xl font-semibold tracking-tight" style={{ color: isDark ? '#F5F5F4' : '#1C1917' }}>
-            EduPath
+          {/* Logo with highlighted Edu */}
+          <Link href="/" className="text-xl font-semibold tracking-tight flex items-center">
+            <span style={{ color: accent }}>Edu</span>
+            <span style={{ color: isDark ? '#F5F5F4' : '#1C1917' }}>Path</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-6">
@@ -95,7 +109,7 @@ export default function Navbar() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 8 }}
                         className="absolute right-0 top-12 w-48 rounded-xl p-1.5 shadow-xl"
-                        style={{ background: isDark ? '#1C1917' : '#fff', border: `1px solid ${isDark ? '#292524' : '#E7E5E4'}` }}
+                        style={{ background: isDark ? '#1C1917' : '#fff', border: '1px solid ' + (isDark ? '#292524' : '#E7E5E4') }}
                       >
                         <Link href="/dashboard" onClick={() => setUserMenu(false)}
                           className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
@@ -135,22 +149,76 @@ export default function Navbar() {
         </nav>
       </motion.header>
 
+      {/* Fullscreen Mobile Menu with Glassmorphism */}
       <AnimatePresence>
         {mobileOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 pt-20 px-6"
-            style={{ background: isDark ? '#111' : '#FCFAF8' }}
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 backdrop-blur-2xl"
+            style={{ 
+              background: isDark ? 'rgba(9,9,11,0.9)' : 'rgba(255,255,255,0.9)',
+            }}
           >
-            {links.map((link, i) => (
-              <motion.div key={link.href} initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: i * 0.05 }}>
-                <Link href={link.href} onClick={() => setMobileOpen(false)}
-                  className="block py-4 text-lg font-medium border-b"
-                  style={{ color: pathname === link.href ? accent : (isDark ? '#F5F5F4' : '#1C1917'), borderColor: isDark ? '#292524' : '#E7E5E4' }}
-                >
-                  {link.label}
-                </Link>
+            <div className="flex flex-col h-full pt-20 px-6">
+              {/* Navigation Links */}
+              <div className="flex-1 flex flex-col justify-center space-y-8">
+                {links.map((link, i) => (
+                  <motion.div 
+                    key={link.href} 
+                    initial={{ x: -50, opacity: 0 }} 
+                    animate={{ x: 0, opacity: 1 }} 
+                    transition={{ delay: i * 0.1 }}
+                  >
+                    <Link 
+                      href={link.href} 
+                      onClick={() => setMobileOpen(false)}
+                      className="block text-4xl font-bold tracking-tight transition-colors"
+                      style={{ 
+                        color: pathname === link.href ? accent : (isDark ? '#F5F5F4' : '#1C1917'),
+                      }}
+                    >
+                      {link.label}
+                    </Link>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Bottom Section */}
+              <motion.div 
+                initial={{ y: 50, opacity: 0 }} 
+                animate={{ y: 0, opacity: 1 }} 
+                transition={{ delay: 0.4 }}
+                className="pb-8 space-y-6"
+              >
+                {!user && (
+                  <Link href="/auth/signup" onClick={() => setMobileOpen(false)}>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="w-full py-4 rounded-2xl text-lg font-semibold text-white"
+                      style={{ background: accent }}
+                    >
+                      Get Started Free
+                    </motion.button>
+                  </Link>
+                )}
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm" style={{ color: isDark ? '#A8A29E' : '#78716C' }}>
+                    Theme
+                  </span>
+                  <button 
+                    onClick={toggleTheme} 
+                    className="p-3 rounded-full"
+                    style={{ background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
+                  >
+                    {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-stone-500" />}
+                  </button>
+                </div>
               </motion.div>
-            ))}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

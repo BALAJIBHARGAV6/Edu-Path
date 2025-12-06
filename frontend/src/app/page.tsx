@@ -1,38 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { motion, useInView } from 'framer-motion'
-import { ArrowRight, ArrowUpRight, Sparkles, Zap, Target, BookOpen, Minus } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { ArrowRight, ArrowUpRight, Sparkles, Target, BookOpen, Users, TrendingUp, Award, Star, Play } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useTheme } from '@/context/ThemeContext'
-import { useRef, useEffect, useState } from 'react'
-
-function CountUp({ target, suffix = '' }) {
-  const [count, setCount] = useState(0)
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true })
-
-  useEffect(() => {
-    if (isInView) {
-      const duration = 2000
-      const steps = 60
-      const increment = target / steps
-      let current = 0
-      const timer = setInterval(() => {
-        current += increment
-        if (current >= target) {
-          setCount(target)
-          clearInterval(timer)
-        } else {
-          setCount(Math.floor(current))
-        }
-      }, duration / steps)
-      return () => clearInterval(timer)
-    }
-  }, [isInView, target])
-
-  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>
-}
+import CountUp from '@/components/CountUp'
+import GradientText from '@/components/GradientText'
+import TextScroll from '@/components/TextScroll'
 
 export default function HomePage() {
   const { user } = useAuth()
@@ -47,111 +22,333 @@ export default function HomePage() {
   const accent = '#2563EB'
 
   const testimonials = [
-    { quote: "EduPath transformed my career. The AI roadmap was exactly what I needed.", name: "Alex Rivera", role: "Software Engineer @ Meta", avatar: "AR" },
-    { quote: "From zero coding to a full-time dev role in 8 months. Incredible.", name: "Priya Sharma", role: "Full Stack Developer @ Stripe", avatar: "PS" },
-    { quote: "The structured approach helped me stay focused throughout my journey.", name: "Marcus Johnson", role: "Backend Engineer @ Netflix", avatar: "MJ" },
-    { quote: "Best investment in my career. The practice problems are top-notch.", name: "Emma Wilson", role: "Frontend Developer @ Airbnb", avatar: "EW" },
+    { quote: "EduPath's AI roadmap was a game-changer. I went from beginner to landing my dream job at Meta in just 8 months.", name: "Alex Rivera", role: "Software Engineer @ Meta", avatar: "AR" },
+    { quote: "The personalized learning path and practice problems helped me master full-stack development efficiently.", name: "Priya Sharma", role: "Full Stack Developer @ Stripe", avatar: "PS" },
+    { quote: "Best platform for structured learning. The AI recommendations were spot-on for my career goals.", name: "Marcus Johnson", role: "Backend Engineer @ Netflix", avatar: "MJ" },
+    { quote: "From zero coding knowledge to a senior developer role. EduPath made the impossible possible.", name: "Emma Wilson", role: "Senior Developer @ Airbnb", avatar: "EW" },
   ]
 
   return (
     <main style={{ background: bg }}>
-      {/* Hero */}
-      <section className="min-h-screen flex flex-col justify-center relative px-6">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] opacity-30"
-            style={{ background: 'radial-gradient(ellipse at center, rgba(37,99,235,0.2) 0%, transparent 70%)' }}
+      {/* Hero Section - Split Layout */}
+      <section className="min-h-screen flex items-center relative overflow-hidden">
+        {/* Background Grid */}
+        <div className="absolute inset-0 opacity-30">
+          <div 
+            className="absolute inset-0"
+            style={{
+              backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(37,99,235,0.1) 1px, transparent 0)',
+              backgroundSize: '40px 40px'
+            }}
           />
         </div>
 
-        <div className="relative max-w-5xl mx-auto w-full pt-20">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-center gap-2 mb-8">
-            <Sparkles className="w-4 h-4" style={{ color: accent }} />
-            <span className="text-sm font-medium" style={{ color: muted }}>AI-Powered Learning Platform</span>
-          </motion.div>
+        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center relative z-10">
+          {/* Left Content */}
+          <div>
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-6"
+              style={{ 
+                background: 'rgba(37,99,235,0.1)',
+                border: '1px solid rgba(37,99,235,0.2)'
+              }}
+            >
+              <Sparkles className="w-3 h-3 text-blue-500" />
+              <span className="text-xs font-medium" style={{ color: muted }}>
+                AI-Powered Learning
+              </span>
+            </motion.div>
 
-          <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className="text-center text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-[1.1] mb-8">
-            <span style={{ color: text }}>Learn.</span><br />
-            <span style={{ background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 50%, #EC4899 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              Build. Grow.
-            </span>
-          </motion.h1>
+            {/* Main Heading */}
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-tight mb-6"
+            >
+              <span style={{ color: text }}>Master coding with</span>
+              <br />
+              <GradientText>AI-powered roadmaps</GradientText>
+            </motion.h1>
 
-          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            className="text-center text-lg md:text-xl max-w-2xl mx-auto mb-12 leading-relaxed" style={{ color: muted }}>
-            AI creates your personalized roadmap. Master in-demand skills with structured paths and hands-on practice.
-          </motion.p>
+            {/* Description */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-lg leading-relaxed mb-8 max-w-lg"
+              style={{ color: muted }}
+            >
+              Get personalized learning paths, practice with real projects, and land your dream tech job faster than ever.
+            </motion.p>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
-            <Link href={user ? '/dashboard' : '/auth/signup'}>
-              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                className="group flex items-center gap-2 px-8 py-4 rounded-full text-base font-semibold text-white" style={{ background: accent }}>
-                {user ? 'Go to Dashboard' : 'Start Free'}
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </motion.button>
-            </Link>
-            <Link href="/roadmaps">
-              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                className="px-8 py-4 rounded-full text-base font-semibold" style={{ color: text, border: '1px solid ' + border }}>
-                Explore Paths
-              </motion.button>
-            </Link>
-          </motion.div>
+            {/* CTA Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="flex flex-col sm:flex-row gap-4 mb-12"
+            >
+              <Link href={user ? "/dashboard" : "/auth/signup"}>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="group flex items-center gap-2 px-6 py-3 rounded-xl text-white font-semibold"
+                  style={{ background: accent }}
+                >
+                  {user ? "Continue Learning" : "Start Free"}
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </motion.button>
+              </Link>
+              <Link href="/roadmaps">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold"
+                  style={{ color: text, border: '1px solid ' + border }}
+                >
+                  <Play className="w-4 h-4" />
+                  Watch Demo
+                </motion.button>
+              </Link>
+            </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 text-center">
-            {[
-              { value: 50000, suffix: '+', label: 'Learners' },
-              { value: 200, suffix: '+', label: 'Paths' },
-              { value: 95, suffix: '%', label: 'Success' },
-              { value: 4.9, suffix: '★', label: 'Rating' },
-            ].map((stat) => (
-              <div key={stat.label}>
-                <div className="text-3xl md:text-4xl font-bold mb-1" style={{ color: text }}>
-                  {stat.value === 4.9 ? '4.9★' : <CountUp target={stat.value} suffix={stat.suffix} />}
+            {/* Stats Row */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="grid grid-cols-3 gap-6"
+            >
+              {[
+                { value: 50000, suffix: '+', label: 'Learners' },
+                { value: 200, suffix: '+', label: 'Paths' },
+                { value: 95, suffix: '%', label: 'Success' },
+              ].map((stat) => (
+                <div key={stat.label} className="text-center">
+                  <div className="text-2xl font-bold mb-1" style={{ color: text }}>
+                    <CountUp target={stat.value} suffix={stat.suffix} />
+                  </div>
+                  <div className="text-xs font-medium" style={{ color: muted }}>{stat.label}</div>
                 </div>
-                <div className="text-sm font-medium" style={{ color: muted }}>{stat.label}</div>
+              ))}
+            </motion.div>
+          </div>
+
+          {/* Right Visual */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.5 }}
+            className="relative"
+          >
+            {/* Main Card */}
+            <div 
+              className="relative p-8 rounded-2xl"
+              style={{ 
+                background: subtle, 
+                border: '1px solid ' + border,
+                boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
+              }}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-white" />
+                </div>
+                <span className="font-semibold" style={{ color: text }}>AI Roadmap Generator</span>
               </div>
-            ))}
+              <p className="text-sm mb-4" style={{ color: muted }}>
+                "I want to become a full-stack developer"
+              </p>
+              <div className="space-y-2">
+                {['React Fundamentals', 'Node.js Backend', 'Database Design', 'Deployment'].map((item, i) => (
+                  <motion.div
+                    key={item}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.7 + i * 0.1 }}
+                    className="flex items-center gap-2 p-2 rounded-lg"
+                    style={{ background: bg }}
+                  >
+                    <div className="w-4 h-4 rounded-full bg-blue-500" />
+                    <span className="text-sm" style={{ color: text }}>{item}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            {/* Floating Elements */}
+            <motion.div
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 3, repeat: Infinity }}
+              className="absolute -top-4 -right-4 p-3 rounded-xl bg-green-500 text-white"
+            >
+              <Award className="w-5 h-5" />
+            </motion.div>
+            <motion.div
+              animate={{ y: [0, 10, 0] }}
+              transition={{ duration: 4, repeat: Infinity }}
+              className="absolute -bottom-4 -left-4 p-3 rounded-xl bg-purple-500 text-white"
+            >
+              <Target className="w-5 h-5" />
+            </motion.div>
           </motion.div>
         </div>
       </section>
 
-      {/* Marquee */}
-      <section className="py-8 border-y overflow-hidden" style={{ borderColor: border }}>
-        <motion.div animate={{ x: [0, -1000] }} transition={{ duration: 20, repeat: Infinity, ease: 'linear' }} className="flex items-center gap-12 whitespace-nowrap">
-          {[...Array(2)].map((_, i) => (
-            <div key={i} className="flex items-center gap-12">
-              {['Frontend', 'Backend', 'Full Stack', 'DevOps', 'Mobile', 'AI/ML', 'Data Science', 'Cloud'].map((s) => (
-                <span key={s} className="text-sm font-medium tracking-wide" style={{ color: muted }}>
-                  {s} <span style={{ color: accent }}>●</span>
-                </span>
-              ))}
+      {/* Professional Marquee */}
+      <section className="relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${isDark ? '#1E293B' : '#F1F5F9'} 0%, ${isDark ? '#0F172A' : '#E2E8F0'} 100%)` }}>
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute inset-0" style={{ 
+            backgroundImage: `linear-gradient(90deg, ${accent}20 1px, transparent 1px)`,
+            backgroundSize: '100px 100%'
+          }} />
+        </div>
+        
+        <div className="relative py-12">
+          <div className="marquee-wrapper">
+            <div className="marquee-track">
+              <div className="marquee-content">
+                <span className="marquee-item">Frontend Development</span>
+                <span className="marquee-item">Backend Engineering</span>
+                <span className="marquee-item">Full Stack Development</span>
+                <span className="marquee-item">DevOps & Cloud Computing</span>
+                <span className="marquee-item">Mobile App Development</span>
+                <span className="marquee-item">Artificial Intelligence</span>
+                <span className="marquee-item">Machine Learning</span>
+                <span className="marquee-item">Data Science & Analytics</span>
+                <span className="marquee-item">Cybersecurity</span>
+                <span className="marquee-item">Game Development</span>
+                <span className="marquee-item">Web3 & Blockchain</span>
+                <span className="marquee-item">UI/UX Design</span>
+              </div>
+              <div className="marquee-content" aria-hidden="true">
+                <span className="marquee-item">Frontend Development</span>
+                <span className="marquee-item">Backend Engineering</span>
+                <span className="marquee-item">Full Stack Development</span>
+                <span className="marquee-item">DevOps & Cloud Computing</span>
+                <span className="marquee-item">Mobile App Development</span>
+                <span className="marquee-item">Artificial Intelligence</span>
+                <span className="marquee-item">Machine Learning</span>
+                <span className="marquee-item">Data Science & Analytics</span>
+                <span className="marquee-item">Cybersecurity</span>
+                <span className="marquee-item">Game Development</span>
+                <span className="marquee-item">Web3 & Blockchain</span>
+                <span className="marquee-item">UI/UX Design</span>
+              </div>
             </div>
-          ))}
-        </motion.div>
+          </div>
+        </div>
+
+        {/* Gradient Fade Edges */}
+        <div className="absolute top-0 left-0 w-24 h-full z-10" style={{ 
+          background: `linear-gradient(to right, ${isDark ? '#0F172A' : '#F1F5F9'}, transparent)` 
+        }} />
+        <div className="absolute top-0 right-0 w-24 h-full z-10" style={{ 
+          background: `linear-gradient(to left, ${isDark ? '#0F172A' : '#F1F5F9'}, transparent)` 
+        }} />
+
+        <style jsx>{`
+          .marquee-wrapper {
+            overflow: hidden;
+            position: relative;
+          }
+          
+          .marquee-track {
+            display: flex;
+            width: fit-content;
+            animation: scroll 40s linear infinite;
+          }
+          
+          .marquee-content {
+            display: flex;
+            flex-shrink: 0;
+            gap: 0;
+          }
+          
+          .marquee-item {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.75rem 2rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+            text-transform: uppercase;
+            color: ${muted};
+            position: relative;
+            transition: all 0.3s ease;
+          }
+          
+          .marquee-item::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 4px;
+            background: ${accent};
+            border-radius: 50%;
+            opacity: 0.6;
+          }
+          
+          .marquee-item:hover {
+            color: ${accent};
+            transform: translateY(-2px);
+          }
+          
+          .marquee-track:hover {
+            animation-play-state: paused;
+          }
+          
+          @keyframes scroll {
+            0% {
+              transform: translateX(0);
+            }
+            100% {
+              transform: translateX(-50%);
+            }
+          }
+          
+          @media (prefers-reduced-motion: reduce) {
+            .marquee-track {
+              animation-duration: 80s;
+            }
+          }
+        `}</style>
       </section>
 
-      {/* Bento Grid */}
-      <section className="py-24 px-6">
+      {/* Features Grid */}
+      <section className="py-20 px-6">
         <div className="max-w-6xl mx-auto">
-          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-            className="text-sm font-medium tracking-widest uppercase mb-4" style={{ color: accent }}>
-            Features
-          </motion.p>
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="text-4xl md:text-5xl font-light mb-16" style={{ color: text }}>
-            Everything you need<br />to become <span className="font-semibold">job-ready</span>
-          </motion.h2>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: accent }}>
+              Features
+            </p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: text }}>
+              Everything you need to <GradientText>succeed</GradientText>
+            </h2>
+            <p className="text-lg max-w-2xl mx-auto" style={{ color: muted }}>
+              From AI-powered roadmaps to hands-on practice, we've built the complete learning ecosystem.
+            </p>
+          </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { title: 'AI Roadmaps', desc: 'Personalized learning paths generated based on your goals and skill level', large: true },
-              { title: 'Practice', desc: 'Hands-on coding challenges with instant feedback' },
-              { title: 'Video Tutorials', desc: 'Curated content from top educators' },
-              { title: 'Progress Tracking', desc: 'Visual analytics to monitor your journey' },
-              { title: 'Study Notes', desc: 'AI-generated summaries and materials', large: true },
+              { icon: Sparkles, title: 'AI Roadmaps', desc: 'Personalized learning paths based on your goals and experience level.' },
+              { icon: Target, title: 'Practice Projects', desc: 'Real coding challenges with instant feedback and detailed explanations.' },
+              { icon: BookOpen, title: 'Curated Resources', desc: 'Hand-picked tutorials and guides from top educators.' },
+              { icon: TrendingUp, title: 'Progress Tracking', desc: 'Visual insights into your learning journey and achievements.' },
+              { icon: Users, title: 'Community', desc: 'Connect with fellow learners and get help when you need it.' },
+              { icon: Award, title: 'Certificates', desc: 'Earn industry-recognized certificates upon completion.' },
             ].map((item, i) => (
               <motion.div
                 key={item.title}
@@ -159,77 +356,70 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className={'p-8 rounded-2xl ' + (item.large ? 'md:col-span-2 lg:col-span-1' : '')}
+                className="p-6 rounded-2xl group hover:scale-105 transition-transform"
                 style={{ background: subtle, border: '1px solid ' + border }}
               >
-                <Minus className="w-8 h-8 mb-6" style={{ color: accent }} />
-                <h3 className="text-xl font-semibold mb-3" style={{ color: text }}>{item.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: muted }}>{item.desc}</p>
+                <item.icon className="w-8 h-8 mb-4 text-blue-500 group-hover:scale-110 transition-transform" />
+                <h3 className="text-lg font-semibold mb-2" style={{ color: text }}>{item.title}</h3>
+                <p className="text-sm" style={{ color: muted }}>{item.desc}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
+      {/* Learning Paths */}
       <section className="py-20 px-6" style={{ background: subtle }}>
         <div className="max-w-6xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
-            <p className="text-sm font-semibold tracking-widest uppercase mb-3" style={{ color: accent }}>How It Works</p>
-            <h2 className="text-3xl lg:text-4xl font-bold" style={{ color: text }}>Three Steps to Success</h2>
-          </motion.div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { step: '01', title: 'Tell Us Your Goals', desc: 'Share your experience level and what you want to achieve' },
-              { step: '02', title: 'Get Your Roadmap', desc: 'AI creates a personalized learning path just for you' },
-              { step: '03', title: 'Start Learning', desc: 'Follow the path with curated resources and practice' },
-            ].map((item, i) => (
-              <motion.div
-                key={item.step}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="relative p-8 rounded-2xl"
-                style={{ background: bg, border: '1px solid ' + border }}
-              >
-                <div className="text-6xl font-bold mb-4" style={{ color: isDark ? 'rgba(37,99,235,0.15)' : 'rgba(37,99,235,0.1)' }}>{item.step}</div>
-                <h3 className="text-xl font-semibold mb-2" style={{ color: text }}>{item.title}</h3>
-                <p className="text-sm leading-relaxed" style={{ color: muted }}>{item.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Paths */}
-      <section className="py-24 px-6">
-        <div className="max-w-6xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="flex items-end justify-between mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="flex items-end justify-between mb-12"
+          >
             <div>
-              <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: accent }}>Paths</p>
-              <h2 className="text-3xl md:text-4xl font-bold" style={{ color: text }}>Popular Learning Paths</h2>
+              <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: accent }}>
+                Learning Paths
+              </p>
+              <h2 className="text-3xl md:text-4xl font-bold" style={{ color: text }}>
+                Popular <GradientText>career paths</GradientText>
+              </h2>
             </div>
             <Link href="/roadmaps" className="hidden md:flex items-center gap-2 text-sm font-semibold" style={{ color: accent }}>
               View all <ArrowUpRight className="w-4 h-4" />
             </Link>
           </motion.div>
+
           <div className="grid gap-4">
             {[
-              { name: 'Frontend Development', learners: '45,000+', duration: '6 months' },
-              { name: 'Backend Development', learners: '38,000+', duration: '5 months' },
-              { name: 'Full Stack Engineering', learners: '52,000+', duration: '8 months' },
-              { name: 'DevOps & Cloud', learners: '28,000+', duration: '4 months' },
+              { name: 'Frontend Development', learners: '45,000+', duration: '6 months', description: 'Master React, Vue, and modern frontend technologies' },
+              { name: 'Backend Development', learners: '38,000+', duration: '5 months', description: 'Build scalable APIs with Node.js, Python, and databases' },
+              { name: 'Full Stack Engineering', learners: '52,000+', duration: '8 months', description: 'Complete web development from frontend to backend' },
+              { name: 'DevOps & Cloud', learners: '28,000+', duration: '4 months', description: 'Deploy and scale applications with AWS, Docker, and Kubernetes' },
             ].map((path, i) => (
-              <motion.div key={path.name} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                whileHover={{ x: 8 }} className="group flex items-center justify-between p-6 rounded-2xl cursor-pointer" style={{ background: subtle, border: '1px solid ' + border }}>
+              <motion.div
+                key={path.name}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                whileHover={{ x: 8 }}
+                className="group flex items-center justify-between p-6 rounded-2xl cursor-pointer"
+                style={{ background: bg, border: '1px solid ' + border }}
+              >
                 <div className="flex items-center gap-5">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center font-bold" style={{ background: 'rgba(37,99,235,0.15)', color: accent }}>
+                  <div 
+                    className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-white"
+                    style={{ background: accent }}
+                  >
                     {String(i + 1).padStart(2, '0')}
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold mb-1" style={{ color: text }}>{path.name}</h3>
-                    <p className="text-sm" style={{ color: muted }}>{path.learners} learners • {path.duration}</p>
+                    <p className="text-sm mb-1" style={{ color: muted }}>{path.description}</p>
+                    <p className="text-xs font-medium" style={{ color: accent }}>
+                      {path.learners} learners • {path.duration}
+                    </p>
                   </div>
                 </div>
                 <ArrowRight className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: accent }} />
@@ -240,19 +430,48 @@ export default function HomePage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-24 px-6" style={{ background: subtle }}>
+      <section className="py-20 px-6">
         <div className="max-w-6xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-16">
-            <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: accent }}>Testimonials</p>
-            <h2 className="text-3xl md:text-4xl font-bold" style={{ color: text }}>Loved by developers</h2>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: accent }}>
+              Success Stories
+            </p>
+            <h2 className="text-3xl md:text-4xl font-bold" style={{ color: text }}>
+              Loved by <GradientText>developers</GradientText>
+            </h2>
           </motion.div>
+
           <div className="grid md:grid-cols-2 gap-6">
             {testimonials.map((item, i) => (
-              <motion.div key={item.name} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                className="p-8 rounded-2xl" style={{ background: bg, border: '1px solid ' + border }}>
-                <p className="text-lg mb-6 leading-relaxed" style={{ color: text }}>"{item.quote}"</p>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ background: accent }}>{item.avatar}</div>
+              <motion.div
+                key={item.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="p-6 rounded-2xl"
+                style={{ background: subtle, border: '1px solid ' + border }}
+              >
+                <div className="flex mb-3">
+                  {[...Array(5)].map((_, j) => (
+                    <Star key={j} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-base leading-relaxed mb-4" style={{ color: text }}>
+                  "{item.quote}"
+                </p>
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white"
+                    style={{ background: accent }}
+                  >
+                    {item.avatar}
+                  </div>
                   <div>
                     <p className="font-semibold" style={{ color: text }}>{item.name}</p>
                     <p className="text-sm" style={{ color: muted }}>{item.role}</p>
@@ -265,14 +484,26 @@ export default function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 px-6">
+      <section className="py-20 px-6" style={{ background: subtle }}>
         <div className="max-w-3xl mx-auto text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <h2 className="text-3xl md:text-5xl font-bold mb-6" style={{ color: text }}>Start learning today</h2>
-            <p className="text-lg mb-10" style={{ color: muted }}>Create your free account and get your personalized roadmap in minutes.</p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: text }}>
+              Ready to <GradientText>start learning</GradientText>?
+            </h2>
+            <p className="text-lg mb-8" style={{ color: muted }}>
+              Join thousands of developers who've accelerated their careers with AI-powered learning.
+            </p>
             <Link href="/auth/signup">
-              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                className="group inline-flex items-center gap-2 px-10 py-5 rounded-full text-lg font-semibold text-white" style={{ background: accent }}>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="group inline-flex items-center gap-2 px-8 py-4 rounded-xl text-lg font-semibold text-white"
+                style={{ background: accent }}
+              >
                 Get Started Free
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </motion.button>
