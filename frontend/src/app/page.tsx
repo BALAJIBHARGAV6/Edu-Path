@@ -34,7 +34,7 @@ export default function HomePage() {
       <div className="min-h-screen">
         {/* Hero Section */}
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16 sm:pt-20 md:pt-24">
-          <div className="absolute inset-0 bg-black" />
+          <div className="absolute inset-0" style={{ background: isDark ? '#000000' : '#FFFFFF' }} />
         
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-20">
