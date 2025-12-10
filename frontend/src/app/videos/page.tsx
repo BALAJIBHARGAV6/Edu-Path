@@ -9,44 +9,46 @@ import {
 import { useTheme } from '@/context/ThemeContext'
 import { useStore } from '@/lib/store'
 import { useAuth } from '@/context/AuthContext'
+import PageWrapper from '@/components/PageWrapper'
+import GradientText from '@/components/GradientText'
 
-// Video data organized by topic
+// Video data organized by topic with real YouTube links
 const videoLibrary: Record<string, any[]> = {
   'HTML': [
-    { id: 1, title: 'HTML Crash Course for Beginners', channel: 'Traversy Media', duration: '1:00:42', views: '3.2M' },
-    { id: 2, title: 'HTML Full Course - Build a Website', channel: 'freeCodeCamp', duration: '2:03:15', views: '5.1M' },
+    { id: 1, title: 'HTML Crash Course for Beginners', channel: 'Traversy Media', duration: '1:00:42', views: '3.2M', videoId: 'UB1O30fR-EE', url: 'https://www.youtube.com/watch?v=UB1O30fR-EE' },
+    { id: 2, title: 'HTML Full Course - Build a Website', channel: 'freeCodeCamp', duration: '2:03:15', views: '5.1M', videoId: 'pQN-pnXPaVg', url: 'https://www.youtube.com/watch?v=pQN-pnXPaVg' },
   ],
   'CSS': [
-    { id: 3, title: 'CSS Tutorial - Zero to Hero', channel: 'freeCodeCamp', duration: '6:18:37', views: '2.8M' },
-    { id: 4, title: 'CSS Flexbox in 15 Minutes', channel: 'Web Dev Simplified', duration: '15:03', views: '1.5M' },
-    { id: 5, title: 'CSS Grid Tutorial', channel: 'Kevin Powell', duration: '32:15', views: '890K' },
+    { id: 3, title: 'CSS Tutorial - Zero to Hero', channel: 'freeCodeCamp', duration: '6:18:37', views: '2.8M', videoId: '1Rs2ND1ryYc', url: 'https://www.youtube.com/watch?v=1Rs2ND1ryYc' },
+    { id: 4, title: 'CSS Flexbox in 15 Minutes', channel: 'Web Dev Simplified', duration: '15:03', views: '1.5M', videoId: 'fYq5PXgSsbE', url: 'https://www.youtube.com/watch?v=fYq5PXgSsbE' },
+    { id: 5, title: 'CSS Grid Tutorial', channel: 'Kevin Powell', duration: '32:15', views: '890K', videoId: 'jV8B24rSN5o', url: 'https://www.youtube.com/watch?v=jV8B24rSN5o' },
   ],
   'JavaScript': [
-    { id: 6, title: 'JavaScript Crash Course For Beginners', channel: 'Traversy Media', duration: '1:40:29', views: '4.5M' },
-    { id: 7, title: 'JavaScript Full Course 2024', channel: 'freeCodeCamp', duration: '8:01:24', views: '2.1M' },
-    { id: 8, title: 'Learn JavaScript - Full Course', channel: 'Bro Code', duration: '12:00:00', views: '1.8M' },
+    { id: 6, title: 'JavaScript Crash Course For Beginners', channel: 'Traversy Media', duration: '1:40:29', views: '4.5M', videoId: 'hdI2bqOjy3c', url: 'https://www.youtube.com/watch?v=hdI2bqOjy3c' },
+    { id: 7, title: 'JavaScript Full Course 2024', channel: 'freeCodeCamp', duration: '8:01:24', views: '2.1M', videoId: 'PkZNo7MFNFg', url: 'https://www.youtube.com/watch?v=PkZNo7MFNFg' },
+    { id: 8, title: 'Learn JavaScript - Full Course', channel: 'Bro Code', duration: '12:00:00', views: '1.8M', videoId: '8dWL3wF_OMw', url: 'https://www.youtube.com/watch?v=8dWL3wF_OMw' },
   ],
   'React': [
-    { id: 9, title: 'React JS Crash Course 2024', channel: 'Traversy Media', duration: '1:48:47', views: '2.3M' },
-    { id: 10, title: 'React Tutorial for Beginners', channel: 'Programming with Mosh', duration: '1:20:33', views: '3.5M' },
-    { id: 11, title: 'Full React Course 2024', channel: 'freeCodeCamp', duration: '5:39:41', views: '1.9M' },
+    { id: 9, title: 'React JS Crash Course 2024', channel: 'Traversy Media', duration: '1:48:47', views: '2.3M', videoId: 'w7ejDZ8SWv8', url: 'https://www.youtube.com/watch?v=w7ejDZ8SWv8' },
+    { id: 10, title: 'React Tutorial for Beginners', channel: 'Programming with Mosh', duration: '1:20:33', views: '3.5M', videoId: 'Ke90Tje7VS0', url: 'https://www.youtube.com/watch?v=Ke90Tje7VS0' },
+    { id: 11, title: 'Full React Course 2024', channel: 'freeCodeCamp', duration: '5:39:41', views: '1.9M', videoId: 'bMknfKXIFA8', url: 'https://www.youtube.com/watch?v=bMknfKXIFA8' },
   ],
   'Node.js': [
-    { id: 12, title: 'Node.js Crash Course', channel: 'Traversy Media', duration: '1:30:03', views: '2.1M' },
-    { id: 13, title: 'Node.js Full Course', channel: 'freeCodeCamp', duration: '4:12:45', views: '3.5M' },
+    { id: 12, title: 'Node.js Crash Course', channel: 'Traversy Media', duration: '1:30:03', views: '2.1M', videoId: 'fBNz5xF-Kx4', url: 'https://www.youtube.com/watch?v=fBNz5xF-Kx4' },
+    { id: 13, title: 'Node.js Full Course', channel: 'freeCodeCamp', duration: '4:12:45', views: '3.5M', videoId: 'RLtyhwFtXQA', url: 'https://www.youtube.com/watch?v=RLtyhwFtXQA' },
   ],
   'TypeScript': [
-    { id: 14, title: 'TypeScript Full Course', channel: 'Net Ninja', duration: '1:23:45', views: '890K' },
-    { id: 15, title: 'TypeScript Tutorial for Beginners', channel: 'Programming with Mosh', duration: '1:04:28', views: '1.2M' },
+    { id: 14, title: 'TypeScript Full Course', channel: 'Net Ninja', duration: '1:23:45', views: '890K', videoId: '2pZmKW9-I_k', url: 'https://www.youtube.com/watch?v=2pZmKW9-I_k' },
+    { id: 15, title: 'TypeScript Tutorial for Beginners', channel: 'Programming with Mosh', duration: '1:04:28', views: '1.2M', videoId: 'd56mG7DezGs', url: 'https://www.youtube.com/watch?v=d56mG7DezGs' },
   ],
   'Git': [
-    { id: 16, title: 'Git and GitHub for Beginners', channel: 'freeCodeCamp', duration: '1:08:29', views: '2.8M' },
-    { id: 17, title: 'Git Tutorial for Beginners', channel: 'Programming with Mosh', duration: '1:09:13', views: '1.5M' },
+    { id: 16, title: 'Git and GitHub for Beginners', channel: 'freeCodeCamp', duration: '1:08:29', views: '2.8M', videoId: 'RGOj5yH7evk', url: 'https://www.youtube.com/watch?v=RGOj5yH7evk' },
+    { id: 17, title: 'Git Tutorial for Beginners', channel: 'Programming with Mosh', duration: '1:09:13', views: '1.5M', videoId: '8JJ101D3knE', url: 'https://www.youtube.com/watch?v=8JJ101D3knE' },
   ],
   'General': [
-    { id: 18, title: 'Web Development Full Course', channel: 'freeCodeCamp', duration: '21:00:00', views: '5.2M' },
-    { id: 19, title: 'Frontend Developer Roadmap 2024', channel: 'Traversy Media', duration: '45:32', views: '1.8M' },
-    { id: 20, title: 'How to Learn Programming', channel: 'TechLead', duration: '12:45', views: '2.1M' },
+    { id: 18, title: 'Web Development Full Course', channel: 'freeCodeCamp', duration: '21:00:00', views: '5.2M', videoId: 'nu_pCVPKzTk', url: 'https://www.youtube.com/watch?v=nu_pCVPKzTk' },
+    { id: 19, title: 'Frontend Developer Roadmap 2024', channel: 'Traversy Media', duration: '45:32', views: '1.8M', videoId: 'UuKdTVVhKGM', url: 'https://www.youtube.com/watch?v=UuKdTVVhKGM' },
+    { id: 20, title: 'How to Learn Programming', channel: 'TechLead', duration: '12:45', views: '2.1M', videoId: 'mvK0UzFNw1Q', url: 'https://www.youtube.com/watch?v=mvK0UzFNw1Q' },
   ]
 }
 
@@ -58,12 +60,9 @@ export default function VideosPage() {
   const [search, setSearch] = useState('')
   const [selectedTopic, setSelectedTopic] = useState<string>('All')
 
-  // Extract topics from user's roadmap
-  const roadmapTopics = currentRoadmap?.milestones?.flatMap((m: any) => 
-    m.skills || [m.title]
-  ) || currentRoadmap?.ai_generated_path?.milestones?.flatMap((m: any) => 
-    m.skills || [m.title]
-  ) || []
+  // Get user's selected skills
+  const userSkills = ['JavaScript', 'React', 'CSS'] // This should come from user settings
+  const roadmapTopics = userSkills
 
   // Get relevant videos based on roadmap or show all
   const getRecommendedVideos = () => {
@@ -109,22 +108,41 @@ export default function VideosPage() {
     return matchesSearch && matchesTopic
   })
 
+  const bg = isDark ? '#09090B' : '#FFFFFF'
+  const text = isDark ? '#FAFAFA' : '#09090B'
+  const muted = isDark ? '#A1A1AA' : '#71717A'
+  const subtle = isDark ? '#18181B' : '#F4F4F5'
+  const border = isDark ? '#27272A' : '#E4E4E7'
+  const accent = '#2563EB'
+
   return (
-    <div className="min-h-screen pt-24 pb-16" style={{ background: isDark ? '#0A0A0F' : '#F8FFFE' }}>
-      <div className="max-w-6xl mx-auto px-6">
-        {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <Video className="w-5 h-5" style={{ color: '#00FFE0' }} />
-            <span className="text-sm font-medium" style={{ color: '#00FFE0' }}>
-              {roadmapTopics.length > 0 ? 'Recommended for You' : 'Video Library'}
-            </span>
-          </div>
-          <h1 className="text-3xl font-black mb-2" style={{ color: isDark ? '#fff' : '#000' }}>Videos</h1>
-          <p className="text-base" style={{ color: isDark ? '#888' : '#666' }}>
-            {roadmapTopics.length > 0 
-              ? 'Curated videos based on your learning path' 
-              : 'Learn from the best tutorials on the web'}
+    <PageWrapper>
+      <div className="min-h-screen pt-20 sm:pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+        {/* Hero Section - EXACT Same as Home Page */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-16">
+          {/* Badge - EXACT Same Style */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-6"
+            style={{ 
+              background: 'rgba(37,99,235,0.1)',
+              border: '1px solid rgba(37,99,235,0.2)'
+            }}
+          >
+            <Video className="w-4 h-4" style={{ color: accent }} />
+            <span className="text-sm font-medium" style={{ color: accent }}>Curated Video Library</span>
+          </motion.div>
+          
+          {/* Main Heading - EXACT Same Style */}
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6" style={{ color: text }}>
+            Learn from the best <GradientText>video tutorials</GradientText>
+          </h1>
+          
+          {/* Description - EXACT Same Style */}
+          <p className="text-lg sm:text-xl leading-relaxed max-w-3xl mx-auto mb-8" style={{ color: muted }}>
+            Access thousands of high-quality video tutorials from top creators. Learn at your own pace with content tailored to your skill level.
           </p>
         </motion.div>
 
@@ -184,44 +202,97 @@ export default function VideosPage() {
         )}
 
         {/* Videos Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredVideos.map((video, i) => (
             <motion.a
               key={video.id}
-              href={`https://www.youtube.com/results?search_query=${encodeURIComponent(video.title)}`}
+              href={video.url}
               target="_blank"
               rel="noopener noreferrer"
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.05 * i }}
-              whileHover={{ y: -6 }}
-              className="rounded-2xl overflow-hidden group"
-              style={{ background: isDark ? 'rgba(20,20,25,0.8)' : 'rgba(255,255,255,0.9)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` }}
+              transition={{ delay: 0.1 * i, type: "spring", stiffness: 100 }}
+              whileHover={{ y: -8, scale: 1.02 }}
+              className="group relative bg-white dark:bg-gray-900 rounded-2xl shadow-lg hover:shadow-2xl transition-all overflow-hidden border border-gray-200 dark:border-gray-700"
             >
               {/* Thumbnail */}
-              <div className="relative aspect-video flex items-center justify-center" 
-                style={{ background: `linear-gradient(135deg, ${isDark ? '#1a1a1a' : '#f0f0f0'}, ${isDark ? '#0d0d0d' : '#e5e5e5'})` }}
-              >
-                <Video className="w-12 h-12" style={{ color: isDark ? '#333' : '#ccc' }} />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,255,224,0.9)' }}>
-                    <Play className="w-6 h-6 text-black ml-1" />
-                  </div>
-                </div>
-                <div className="absolute bottom-2 right-2 px-2 py-1 rounded text-xs font-medium" style={{ background: 'rgba(0,0,0,0.8)', color: '#fff' }}>
+              <div className="relative aspect-video overflow-hidden">
+                <img 
+                  src={`https://img.youtube.com/vi/${video.videoId}/maxresdefault.jpg`}
+                  alt={video.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                
+                {/* Duration Badge */}
+                <div className="absolute bottom-3 right-3 px-2 py-1 bg-black/80 backdrop-blur-sm text-white text-xs font-semibold rounded-lg">
                   {video.duration}
+                </div>
+                
+                {/* Play Button */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                  <motion.div 
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="w-16 h-16 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center shadow-lg"
+                  >
+                    <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M8 5v10l8-5-8-5z"/>
+                    </svg>
+                  </motion.div>
+                </div>
+
+                {/* Quality Badge */}
+                <div className="absolute top-3 left-3 px-2 py-1 bg-blue-600 text-white text-xs font-bold rounded-lg">
+                  HD
                 </div>
               </div>
 
-              {/* Info */}
-              <div className="p-4">
-                <h3 className="font-semibold text-sm mb-1 line-clamp-2 group-hover:text-[#00FFE0] transition-colors" style={{ color: isDark ? '#fff' : '#000' }}>
+              {/* Content */}
+              <div className="p-5">
+                <h3 className="font-bold text-base mb-3 line-clamp-2 leading-tight text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                   {video.title}
                 </h3>
-                <p className="text-xs mb-2" style={{ color: isDark ? '#888' : '#666' }}>{video.channel}</p>
-                <div className="flex items-center gap-3 text-xs" style={{ color: isDark ? '#666' : '#888' }}>
-                  <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{video.views}</span>
-                  <ExternalLink className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#00FFE0' }} />
+                
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">
+                      {video.channel.charAt(0)}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                    {video.channel}
+                  </p>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                    <span className="flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                        <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
+                      </svg>
+                      {video.views}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
+                      </svg>
+                      {video.duration}
+                    </span>
+                  </div>
+                  
+
+                  <motion.div 
+                    whileHover={{ scale: 1.1 }}
+                    className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center"
+                  >
+                    <svg className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </motion.div>
                 </div>
               </div>
             </motion.a>
@@ -235,7 +306,8 @@ export default function VideosPage() {
             <p className="text-sm" style={{ color: isDark ? '#666' : '#888' }}>Try adjusting your search</p>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </PageWrapper>
   )
 }

@@ -1,9 +1,14 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import Link from 'next/link'
-import { Sparkles, Target, Users, Zap, Shield, ArrowRight } from 'lucide-react'
+import { 
+  Target, Users, Zap, Heart, Award, Code2, 
+  BookOpen, Lightbulb, ArrowRight, CheckCircle2, Shield, Sparkles
+} from 'lucide-react'
 import { useTheme } from '@/context/ThemeContext'
+import PageWrapper from '@/components/PageWrapper'
+import GradientText from '@/components/GradientText'
+import Link from 'next/link'
 
 const values = [
   { icon: Target, title: 'Mission-Driven', desc: 'Quality education for everyone' },
@@ -16,35 +21,28 @@ export default function AboutPage() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
 
+  const bg = isDark ? '#09090B' : '#FFFFFF'
+  const text = isDark ? '#FAFAFA' : '#09090B'
+  const muted = isDark ? '#A1A1AA' : '#71717A'
+  const subtle = isDark ? '#18181B' : '#F4F4F5'
+  const border = isDark ? '#27272A' : '#E4E4E7'
+  const accent = '#2563EB'
+
   return (
-    <div style={{ background: isDark ? '#000' : '#fff', minHeight: '100vh' }} className="pt-24 pb-16">
-      {/* Hero */}
-      <section className="relative py-20 px-6">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 opacity-10 rounded-full blur-[100px]" style={{ background: 'var(--neon)' }} />
-        </div>
-
-        <div className="max-w-4xl mx-auto text-center relative">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <h1 className="text-5xl font-bold mb-6" style={{ color: isDark ? '#fff' : '#000' }}>
-              About <span className="gradient-text">EduPath AI</span>
-            </h1>
-            <p className="text-xl max-w-2xl mx-auto" style={{ color: isDark ? '#888' : '#666' }}>
-              We're on a mission to make quality education accessible through AI-powered personalized learning.
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="py-12 border-y border-[var(--border-light)]">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-              { value: '50K+', label: 'Learners' },
-              { value: '30+', label: 'Countries' },
-              { value: '200+', label: 'Paths' },
-              { value: '4.9', label: 'Rating' }
+    <PageWrapper>
+      <div className="min-h-screen pt-20 sm:pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+        {/* Hero */}
+        <section className="relative py-20 px-6">
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 opacity-10 rounded-full blur-[100px]" style={{ background: accent }} />
+          </div>
+          <div className="max-w-4xl mx-auto text-center relative">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6" style={{ color: text }}>
+                About <GradientText>EduPath AI</GradientText>
+              </h1>
+              <p className="text-base sm:text-lg leading-relaxed max-w-2xl mx-auto" style={{ color: muted }}>
+                We're on a mission to make quality education accessible through AI-powered personalized learning.
             ].map((stat, i) => (
               <motion.div
                 key={i}
@@ -155,6 +153,7 @@ export default function AboutPage() {
           </motion.div>
         </div>
       </section>
-    </div>
+      </div>
+    </PageWrapper>
   )
 }

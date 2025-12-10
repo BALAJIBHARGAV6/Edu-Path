@@ -11,6 +11,9 @@ import {
 import { useStore } from '@/lib/store'
 import { useAuth } from '@/context/AuthContext'
 import { useTheme } from '@/context/ThemeContext'
+import PageWrapper from '@/components/PageWrapper'
+import GradientText from '@/components/GradientText'
+import toast from 'react-hot-toast'
 
 // Default starter concepts when no roadmap exists
 const starterConcepts = [
@@ -29,10 +32,9 @@ const starterConcepts = [
 export default function DashboardPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
-  const { currentRoadmap, onboardingData } = useStore()
+  const { currentRoadmap, onboardingData, userProgress, userSkills, markConceptComplete } = useStore()
   const { theme } = useTheme()
   const isDark = theme === 'dark'
-  const [completedConcepts, setCompletedConcepts] = useState<number[]>([])
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/auth/login')
@@ -68,37 +70,106 @@ export default function DashboardPage() {
     : starterConcepts
 
   const toggleConcept = (id: number) => {
-    setCompletedConcepts(prev => 
-      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    markConceptComplete(id)
+    toast.success(
+      userProgress.completedConcepts.includes(id) 
+        ? 'Concept unmarked!' 
+        : 'Great job! Concept completed! 🎉'
     )
   }
 
   const completedCount = hasRoadmap 
     ? learningConcepts.filter((c: any) => c.isCompleted).length 
-    : completedConcepts.length
+    : userProgress.completedConcepts.length
   const progressPercent = Math.round((completedCount / learningConcepts.length) * 100)
 
+  const bg = isDark ? '#09090B' : '#FFFFFF'
+  const text = isDark ? '#FAFAFA' : '#09090B'
+  const muted = isDark ? '#A1A1AA' : '#71717A'
+  const subtle = isDark ? '#18181B' : '#F4F4F5'
+  const border = isDark ? '#27272A' : '#E4E4E7'
+  const accent = '#2563EB'
+
+  const stats = [
+    { title: 'Concepts Learned', value: completedCount.toString(), change: '+12%', color: '#10B981', icon: CheckCircle2 },
+    { title: 'Study Hours', value: '24h', change: '+8%', color: '#F59E0B', icon: Clock },
+    { title: 'Videos Watched', value: '15', change: '+25%', color: '#EF4444', icon: Play },
+    { title: 'Progress', value: `${progressPercent}%`, change: '+15%', color: '#8B5CF6', icon: Target },
+  ]
+
   return (
-    <div className="min-h-screen pt-24 pb-16 px-6" style={{ background: isDark ? '#0A0A0F' : '#F8FFFE' }}>
-      <div className="max-w-5xl mx-auto">
+    <PageWrapper>
+      <div className="min-h-screen pt-20 sm:pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto">
         
-        {/* Welcome Header */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-5 h-5" style={{ color: '#00FFE0' }} />
-            <span className="text-sm font-medium" style={{ color: '#00FFE0' }}>
-              {hasRoadmap ? 'Continue Learning' : 'Get Started'}
-            </span>
-          </div>
-          <h1 className="text-3xl font-black" style={{ color: isDark ? '#fff' : '#000' }}>
-            Hello, {userName}! 👋
+        {/* Hero Section - EXACT Same as Home Page */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-16">
+          {/* Badge - EXACT Same Style */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-6"
+            style={{ 
+              background: 'rgba(37,99,235,0.1)',
+              border: '1px solid rgba(37,99,235,0.2)'
+            }}
+          >
+            <Sparkles className="w-4 h-4" style={{ color: accent }} />
+            <span className="text-sm font-medium" style={{ color: accent }}>Your Learning Journey</span>
+          </motion.div>
+          
+          {/* Main Heading - EXACT Same Style */}
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6" style={{ color: text }}>
+            Welcome back, <GradientText>{user?.email?.split('@')[0] || 'Learner'}</GradientText>
           </h1>
-          <p className="text-base mt-1" style={{ color: isDark ? '#888' : '#666' }}>
-            {hasRoadmap 
-              ? `You're on the ${currentRoadmap.skill?.name || 'Learning'} path` 
-              : 'Start with these fundamental concepts'}
+          
+          {/* Description - EXACT Same Style */}
+          <p className="text-lg sm:text-xl leading-relaxed max-w-3xl mx-auto mb-8" style={{ color: muted }}>
+            Track your progress, continue your learning journey, and achieve your goals with personalized insights.
           </p>
         </motion.div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {stats.map((stat, i) => (
+            <motion.div
+              key={stat.title}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 * i, type: "spring", stiffness: 100 }}
+              whileHover={{ y: -4, scale: 1.02 }}
+              className="group relative bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700 overflow-hidden"
+            >
+              {/* Background Gradient */}
+              <div 
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{ background: `linear-gradient(135deg, ${stat.color}10, ${stat.color}05)` }}
+              />
+              
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div 
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform"
+                    style={{ background: `linear-gradient(135deg, ${stat.color}, ${stat.color}CC)` }}
+                  >
+                    <stat.icon className="w-7 h-7 text-white" />
+                  </div>
+                  <motion.span 
+                    whileHover={{ scale: 1.05 }}
+                    className="text-xs font-bold px-3 py-1.5 rounded-full shadow-sm"
+                    style={{ background: stat.color + '20', color: stat.color }}
+                  >
+                    {stat.change}
+                  </motion.span>
+                </div>
+                <h3 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                  {stat.value}
+                </h3>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{stat.title}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
 
         {/* Progress Card */}
         <motion.div 
@@ -156,7 +227,7 @@ export default function DashboardPage() {
           
           <div className="grid gap-3">
             {learningConcepts.map((concept: any, i: number) => {
-              const isCompleted = hasRoadmap ? concept.isCompleted : completedConcepts.includes(concept.id)
+              const isCompleted = hasRoadmap ? concept.isCompleted : userProgress.completedConcepts.includes(concept.id)
               const isLocked = hasRoadmap && concept.status === 'locked' && i > 2
               
               return (
@@ -263,7 +334,8 @@ export default function DashboardPage() {
             ))}
           </div>
         </motion.div>
+        </div>
       </div>
-    </div>
+    </PageWrapper>
   )
 }

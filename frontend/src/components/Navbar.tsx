@@ -60,9 +60,14 @@ export default function Navbar() {
         animate={{ opacity: 1 }}
         className="fixed top-0 left-0 right-0 z-50"
         style={{ 
-          background: scrolled ? (isDark ? 'rgba(9,9,11,0.95)' : 'rgba(255,255,255,0.95)') : 'transparent',
-          backdropFilter: scrolled ? 'blur(12px)' : 'none',
-          borderBottom: scrolled ? '1px solid ' + (isDark ? '#27272A' : '#E4E4E7') : 'none'
+          background: scrolled 
+            ? (isDark 
+                ? 'linear-gradient(135deg, rgba(9, 9, 11, 0.8) 0%, rgba(24, 24, 27, 0.6) 100%)'
+                : 'linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.6) 100%)')
+            : 'transparent',
+          backdropFilter: scrolled ? 'blur(20px)' : 'none',
+          borderBottom: scrolled ? `1px solid ${isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)'}` : 'none',
+          boxShadow: scrolled ? (isDark ? '0 8px 32px rgba(0, 0, 0, 0.3)' : '0 8px 32px rgba(0, 0, 0, 0.1)') : 'none'
         }}
       >
         <nav className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -156,9 +161,13 @@ export default function Navbar() {
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 backdrop-blur-2xl"
+            className="fixed inset-0 z-40 backdrop-blur-3xl"
             style={{ 
-              background: isDark ? 'rgba(9,9,11,0.9)' : 'rgba(255,255,255,0.9)',
+              background: isDark 
+                ? 'linear-gradient(135deg, rgba(9, 9, 11, 0.95) 0%, rgba(24, 24, 27, 0.9) 100%)'
+                : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%)',
+              backdropFilter: 'blur(40px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(40px) saturate(180%)',
             }}
           >
             <div className="flex flex-col h-full pt-20 px-6">

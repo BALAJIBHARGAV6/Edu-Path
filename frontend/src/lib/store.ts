@@ -51,6 +51,11 @@ export interface Roadmap {
   ai_generated_path: RoadmapPath
   created_at: string
   updated_at: string
+  milestones?: Milestone[]
+  skill?: {
+    name: string
+    level: string
+  }
 }
 
 interface OnboardingData {
@@ -65,10 +70,22 @@ interface OnboardingData {
   preferredContent: string[]
 }
 
+interface UserProgress {
+  completedConcepts: number[]
+  completedProblems: number[]
+  watchedVideos: string[]
+  readResources: number[]
+  totalStudyTime: number
+  streakDays: number
+  lastActiveDate: string
+}
+
 interface AppState {
   onboardingStep: number
   onboardingData: OnboardingData
   currentRoadmap: Roadmap | null
+  userProgress: UserProgress
+  userSkills: string[]
   sidebarOpen: boolean
   isLoading: boolean
   
@@ -76,6 +93,14 @@ interface AppState {
   updateOnboardingData: (data: Partial<OnboardingData>) => void
   resetOnboarding: () => void
   setCurrentRoadmap: (roadmap: Roadmap | null) => void
+  updateUserProgress: (progress: Partial<UserProgress>) => void
+  setUserSkills: (skills: string[]) => void
+  addUserSkill: (skill: string) => void
+  removeUserSkill: (skill: string) => void
+  markConceptComplete: (conceptId: number) => void
+  markProblemComplete: (problemId: number) => void
+  markVideoWatched: (videoId: string) => void
+  markResourceRead: (resourceId: number) => void
   setSidebarOpen: (open: boolean) => void
   setLoading: (loading: boolean) => void
   updateTopicCompletion: (milestoneId: number, topicIndex: number, completed: boolean) => void
@@ -94,12 +119,24 @@ const initialOnboardingData: OnboardingData = {
   preferredContent: ['videos', 'articles'],
 }
 
+const initialUserProgress: UserProgress = {
+  completedConcepts: [],
+  completedProblems: [],
+  watchedVideos: [],
+  readResources: [],
+  totalStudyTime: 0,
+  streakDays: 0,
+  lastActiveDate: new Date().toISOString(),
+}
+
 export const useStore = create<AppState>()(
   persist(
     (set) => ({
       onboardingStep: 1,
       onboardingData: initialOnboardingData,
       currentRoadmap: null,
+      userProgress: initialUserProgress,
+      userSkills: ['JavaScript', 'React', 'CSS'],
       sidebarOpen: true,
       isLoading: false,
 
@@ -125,6 +162,58 @@ export const useStore = create<AppState>()(
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
       
       setLoading: (loading) => set({ isLoading: loading }),
+      
+      updateUserProgress: (progress) => set((state) => ({
+        userProgress: { ...state.userProgress, ...progress }
+      })),
+      
+      setUserSkills: (skills) => set({ userSkills: skills }),
+      
+      addUserSkill: (skill) => set((state) => ({
+        userSkills: state.userSkills.includes(skill) 
+          ? state.userSkills 
+          : [...state.userSkills, skill]
+      })),
+      
+      removeUserSkill: (skill) => set((state) => ({
+        userSkills: state.userSkills.filter(s => s !== skill)
+      })),
+      
+      markConceptComplete: (conceptId) => set((state) => ({
+        userProgress: {
+          ...state.userProgress,
+          completedConcepts: state.userProgress.completedConcepts.includes(conceptId)
+            ? state.userProgress.completedConcepts
+            : [...state.userProgress.completedConcepts, conceptId]
+        }
+      })),
+      
+      markProblemComplete: (problemId) => set((state) => ({
+        userProgress: {
+          ...state.userProgress,
+          completedProblems: state.userProgress.completedProblems.includes(problemId)
+            ? state.userProgress.completedProblems
+            : [...state.userProgress.completedProblems, problemId]
+        }
+      })),
+      
+      markVideoWatched: (videoId) => set((state) => ({
+        userProgress: {
+          ...state.userProgress,
+          watchedVideos: state.userProgress.watchedVideos.includes(videoId)
+            ? state.userProgress.watchedVideos
+            : [...state.userProgress.watchedVideos, videoId]
+        }
+      })),
+      
+      markResourceRead: (resourceId) => set((state) => ({
+        userProgress: {
+          ...state.userProgress,
+          readResources: state.userProgress.readResources.includes(resourceId)
+            ? state.userProgress.readResources
+            : [...state.userProgress.readResources, resourceId]
+        }
+      })),
       
       updateTopicCompletion: (milestoneId, topicIndex, completed) => set((state) => {
         if (!state.currentRoadmap) return state
