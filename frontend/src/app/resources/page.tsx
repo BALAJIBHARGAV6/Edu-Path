@@ -403,11 +403,11 @@ test('handles user interaction', async () => {
 
   return (
     <PageWrapper>
-      <div className="min-h-screen pt-20 sm:pt-24 pb-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-        {/* Hero Section - EXACT Same as Home Page */}
+      <div className="min-h-screen pt-16 sm:pt-20 md:pt-24" style={{ background: isDark ? '#0A0A0F' : '#F8FFFE' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Hero Section */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-16">
-          {/* Badge - EXACT Same Style */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -421,12 +421,10 @@ test('handles user interaction', async () => {
             <span className="text-sm font-medium" style={{ color: accent }}>AI-Powered Study Notes</span>
           </motion.div>
           
-          {/* Main Heading - EXACT Same Style */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6" style={{ color: text }}>
             Master concepts with <GradientText>smart resources</GradientText>
           </h1>
           
-          {/* Description - EXACT Same Style */}
           <p className="text-lg sm:text-xl leading-relaxed max-w-3xl mx-auto mb-8" style={{ color: muted }}>
             Generate AI-powered study notes for any topic. Get personalized explanations, examples, and practice materials tailored to your learning style.
           </p>

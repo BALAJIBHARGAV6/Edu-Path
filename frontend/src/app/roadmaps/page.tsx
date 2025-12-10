@@ -298,6 +298,9 @@ export default function RoadmapsPage() {
   const [showCustomModal, setShowCustomModal] = useState(false)
   const [customGoal, setCustomGoal] = useState('')
   const [customLevel, setCustomLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner')
+  const [generating, setGenerating] = useState(false)
+  const [generatedRoadmap, setGeneratedRoadmap] = useState<any>(null)
+  const [showRoadmapView, setShowRoadmapView] = useState(false)
 
   const bg = isDark ? '#09090B' : '#FFFFFF'
   const text = isDark ? '#FAFAFA' : '#09090B'
@@ -353,10 +356,6 @@ export default function RoadmapsPage() {
     setCustomGoal('')
   }
 
-  const [generating, setGenerating] = useState(false)
-  const [generatedRoadmap, setGeneratedRoadmap] = useState<any>(null)
-  const [showRoadmapView, setShowRoadmapView] = useState(false)
-
   const generateRoadmap = async (level: 'beginner' | 'intermediate' | 'advanced') => {
     if (!selectedStack) return
     
@@ -396,7 +395,8 @@ export default function RoadmapsPage() {
 
   return (
     <PageWrapper>
-      <div className="min-h-screen pt-20 sm:pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen pt-16 sm:pt-20 md:pt-24" style={{ background: isDark ? '#0A0A0F' : '#F8FFFE' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Loading State */}
         {generating && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -689,6 +689,7 @@ export default function RoadmapsPage() {
           </div>
           </div>
         )}
+        </div>
       </div>
 
       {/* Level Selection Modal */}

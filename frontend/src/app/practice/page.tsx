@@ -125,7 +125,8 @@ export default function PracticePage() {
 
   return (
     <PageWrapper>
-      <div className="min-h-screen pt-20 sm:pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen pt-16 sm:pt-20 md:pt-24" style={{ background: isDark ? '#0A0A0F' : '#F8FFFE' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {selectedProblem ? (
           /* Problem Solving View */
           <div className="max-w-7xl mx-auto">
@@ -437,6 +438,7 @@ export default function PracticePage() {
           </div>
           </div>
         )}
+        </div>
       </div>
     </PageWrapper>
   )
