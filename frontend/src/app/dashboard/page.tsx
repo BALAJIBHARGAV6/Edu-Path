@@ -70,17 +70,47 @@ export default function DashboardPage() {
     : starterConcepts
 
   const toggleConcept = (id: number) => {
+    const wasCompleted = userProgress.completedConcepts.includes(id)
+    
+    // Update the global progress state
     markConceptComplete(id)
-    toast.success(
-      userProgress.completedConcepts.includes(id) 
-        ? 'Concept unmarked!' 
-        : 'Great job! Concept completed! 🎉'
-    )
+    
+    // Find current concept index
+    const currentIndex = learningConcepts.findIndex((c: any) => c.id === id)
+    const nextConcept = learningConcepts[currentIndex + 1]
+    
+    if (!wasCompleted) {
+      // Concept was just completed
+      toast.success('Great job! Concept completed! 🎉✨')
+      
+      // Check if there's a next concept to unlock
+      if (nextConcept && currentIndex < learningConcepts.length - 1) {
+        setTimeout(() => {
+          toast.success(`🔓 "${nextConcept.title}" unlocked! Keep going! 🚀`, {
+            duration: 4000,
+          })
+        }, 1000)
+      } else if (currentIndex === learningConcepts.length - 1) {
+        // Last concept completed
+        setTimeout(() => {
+          toast.success('🎊 Congratulations! All concepts completed! 🎊', {
+            duration: 5000,
+          })
+        }, 1000)
+      }
+    } else {
+      // Concept was unmarked
+      toast.success('Concept unmarked! Keep learning! 📚')
+    }
+    
+    // Log for debugging
+    console.log('Concept toggled:', id, 'Index:', currentIndex, 'Next:', nextConcept?.title)
   }
 
-  const completedCount = hasRoadmap 
-    ? learningConcepts.filter((c: any) => c.isCompleted).length 
-    : userProgress.completedConcepts.length
+  // Calculate completed count based on global progress state
+  const completedCount = learningConcepts.filter((concept: any) => 
+    userProgress.completedConcepts.includes(concept.id)
+  ).length
   const progressPercent = Math.round((completedCount / learningConcepts.length) * 100)
 
   const bg = isDark ? '#09090B' : '#FFFFFF'
@@ -221,29 +251,64 @@ export default function DashboardPage() {
 
         {/* Learning Concepts Grid */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <h2 className="text-xl font-bold mb-4" style={{ color: isDark ? '#fff' : '#000' }}>
-            {hasRoadmap ? 'Topics to Learn' : '10 Essential Concepts'}
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold" style={{ color: isDark ? '#fff' : '#000' }}>
+              {hasRoadmap ? 'Topics to Learn' : '10 Essential Concepts'}
+            </h2>
+            <p className="text-sm" style={{ color: muted }}>
+              💡 Click to complete • 🔓 Unlocks next concept
+            </p>
+          </div>
           
           <div className="grid gap-3">
             {learningConcepts.map((concept: any, i: number) => {
-              const isCompleted = hasRoadmap ? concept.isCompleted : userProgress.completedConcepts.includes(concept.id)
-              const isLocked = hasRoadmap && concept.status === 'locked' && i > 2
+              const isCompleted = userProgress.completedConcepts.includes(concept.id)
+              
+              // Sequential unlocking logic
+              const isLocked = (() => {
+                // First concept is always unlocked
+                if (i === 0) return false
+                
+                // Check if previous concept is completed
+                const previousConcept = learningConcepts[i - 1]
+                const isPreviousCompleted = userProgress.completedConcepts.includes(previousConcept.id)
+                
+                // Lock if previous concept is not completed
+                return !isPreviousCompleted
+              })()
               
               return (
                 <motion.div
                   key={concept.id}
                   initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.05 * i }}
-                  className={`flex items-center gap-4 p-4 rounded-xl transition-all ${isLocked ? 'opacity-50' : 'cursor-pointer'}`}
+                  animate={{ 
+                    opacity: 1, 
+                    x: 0,
+                    scale: isLocked ? 0.98 : 1
+                  }}
+                  transition={{ 
+                    delay: 0.05 * i,
+                    scale: { duration: 0.2 }
+                  }}
+                  whileHover={!isLocked ? { scale: 1.02 } : {}}
+                  className={`flex items-center gap-4 p-4 rounded-xl transition-all ${
+                    isLocked 
+                      ? 'opacity-50 cursor-not-allowed' 
+                      : 'cursor-pointer hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]'
+                  }`}
                   style={{ 
                     background: isCompleted 
                       ? (isDark ? 'rgba(0,247,113,0.1)' : 'rgba(0,247,113,0.08)')
                       : (isDark ? 'rgba(20,20,25,0.8)' : 'rgba(255,255,255,0.9)'),
                     border: `1px solid ${isCompleted ? 'rgba(0,247,113,0.3)' : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)')}`
                   }}
-                  onClick={() => !isLocked && !hasRoadmap && toggleConcept(concept.id)}
+                  onClick={() => {
+                    if (isLocked) {
+                      toast.error('🔒 Complete the previous concept first!', { duration: 2000 })
+                    } else {
+                      toggleConcept(concept.id)
+                    }
+                  }}
                 >
                   {/* Number/Status */}
                   <div 

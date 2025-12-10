@@ -183,7 +183,7 @@ export const useStore = create<AppState>()(
         userProgress: {
           ...state.userProgress,
           completedConcepts: state.userProgress.completedConcepts.includes(conceptId)
-            ? state.userProgress.completedConcepts
+            ? state.userProgress.completedConcepts.filter(id => id !== conceptId)
             : [...state.userProgress.completedConcepts, conceptId]
         }
       })),
