@@ -12,8 +12,8 @@ import PageWrapper from '@/components/PageWrapper'
 import Navbar from '@/components/Navbar'
 
 const CAREER_GOALS = ['Frontend Developer', 'Backend Developer', 'Full Stack Developer', 'Mobile Developer', 'DevOps Engineer', 'Data Scientist']
-const EXPERIENCE = ['Beginner', 'Intermediate', 'Advanced']
-const LEARNING_STYLES = ['Visual', 'Reading', 'Hands-on', 'Mixed']
+const EXPERIENCE: Array<'beginner' | 'intermediate' | 'advanced'> = ['beginner' as const, 'intermediate' as const, 'advanced' as const]
+const LEARNING_STYLES: Array<'visual' | 'reading' | 'hands-on' | 'mixed'> = ['visual' as const, 'reading' as const, 'hands-on' as const, 'mixed' as const]
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -157,7 +157,7 @@ export default function OnboardingPage() {
                   {EXPERIENCE.map((level) => (
                     <button
                       key={level}
-                      onClick={() => updateOnboardingData({ experienceLevel: level })}
+                      onClick={() => updateOnboardingData({ experienceLevel: level as 'beginner' | 'intermediate' | 'advanced' })}
                       className="w-full p-6 rounded-xl text-left font-medium transition-all flex items-center justify-between"
                       style={{
                         background: onboardingData.experienceLevel === level ? accent : subtle,
@@ -190,7 +190,7 @@ export default function OnboardingPage() {
                   {LEARNING_STYLES.map((style) => (
                     <button
                       key={style}
-                      onClick={() => updateOnboardingData({ learningStyle: style })}
+                      onClick={() => updateOnboardingData({ learningStyle: style as 'visual' | 'reading' | 'hands-on' | 'mixed' })}
                       className="p-6 rounded-xl text-left font-medium transition-all"
                       style={{
                         background: onboardingData.learningStyle === style ? accent : subtle,
@@ -218,7 +218,7 @@ export default function OnboardingPage() {
                   <p style={{ color: muted }}>How many hours per week can you dedicate?</p>
                 </div>
 
-                <div className="bg-gradient-to-br" style={{ background: subtle }} className="p-8 rounded-xl">
+                <div className="p-8 rounded-xl" style={{ background: subtle }}>
                   <div className="text-center mb-6">
                     <div className="text-5xl font-bold mb-2" style={{ color: accent }}>{onboardingData.hoursPerWeek}</div>
                     <p style={{ color: muted }}>hours per week</p>
