@@ -44,7 +44,7 @@ export default function LeaderboardPage() {
     setLoading(true)
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/practice/leaderboard?timeFrame=${timeFrame}&limit=50`
+        `${process.env.NEXT_PUBLIC_API_URL}/api/practice/leaderboard?timeFrame=${timeFrame}&limit=50`
       )
       const data = await response.json()
       

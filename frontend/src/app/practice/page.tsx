@@ -73,7 +73,7 @@ export default function PracticePage() {
         count: '6'
       })
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/practice/challenges?${params}`)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/practice/challenges?${params}`)
       const data = await response.json()
       
       if (data.success) {
@@ -108,7 +108,7 @@ export default function PracticePage() {
     setOutput(null)
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/practice/submit-solution`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/practice/submit-solution`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

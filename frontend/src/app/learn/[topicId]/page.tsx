@@ -73,7 +73,7 @@ export default function LearnTopicPage() {
     setLoadingVideos(true)
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/videos/search?query=${encodeURIComponent(topicName + ' tutorial')}`
+        `${process.env.NEXT_PUBLIC_API_URL}/api/videos/search?query=${encodeURIComponent(topicName + ' tutorial')}`
       )
       const data = await response.json()
       if (data.success) {
@@ -91,7 +91,7 @@ export default function LearnTopicPage() {
     
     setGeneratingNotes(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notes/generate`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notes/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
