@@ -1,5 +1,5 @@
 [build]
 rootDir = "backend"
 
-[[build.nixpacks.pkgs]]
-apt = ["build-essential"]
+[buildConfig]
+nodeVersion = "20"

@@ -1,4 +1,2 @@
 [build]
-builder = "DOCKERFILE"
-context = "backend"
-dockerfile = "backend/Dockerfile"
+builder = "NIXPACKS"
