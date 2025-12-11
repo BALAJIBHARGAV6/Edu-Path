@@ -21,7 +21,12 @@ const PORT = parseInt(process.env.PORT || '5000', 10);
 app.use(helmet());
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL || 'https://edu-path.vercel.app', 'https://edu-path-balajibhargav6.vercel.app']
+    ? [
+        process.env.FRONTEND_URL || 'https://edu-path.vercel.app',
+        'https://edu-path.vercel.app',
+        'https://edu-path-learner.vercel.app',
+        'https://edu-path-balajibhargav6.vercel.app'
+      ]
     : 'http://localhost:3000',
   credentials: true,
 }));
