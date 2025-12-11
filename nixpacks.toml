@@ -1,5 +1,0 @@
-[build]
-rootDir = "backend"
-
-[buildConfig]
-nodeVersion = "20"
