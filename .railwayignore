@@ -1,0 +1,5 @@
+frontend/
+supabase/
+DOCUMENTATION.md
+README.md
+.gitignore
