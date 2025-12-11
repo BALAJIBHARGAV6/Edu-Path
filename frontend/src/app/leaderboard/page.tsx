@@ -271,33 +271,3 @@ export default function LeaderboardPage() {
     </PageWrapper>
   )
 }
-                      user.badge === 'crown' ? 'text-amber-400' :
-                      user.badge === 'silver' ? 'text-gray-400' :
-                      'text-amber-700'
-                    }`}>
-                      {user.badge === 'crown' ? '👑 Champion' :
-                       user.badge === 'silver' ? '🥈 Elite' :
-                       '🥉 Pro'}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="col-span-2 text-center">
-                <span className="font-semibold text-indigo-400">{user.xp.toLocaleString()}</span>
-              </div>
-              <div className="col-span-2 text-center">
-                <span className="flex items-center justify-center gap-1 text-orange-500">
-                  <Flame className="w-4 h-4" />
-                  {user.streak}
-                </span>
-              </div>
-              <div className="col-span-2 text-center">
-                <span className="text-emerald-500">{user.problemsSolved}</span>
-              </div>
-            </div>
-          ))}
-        </motion.div>
-      </div>
-    </div>
-  )
-}
