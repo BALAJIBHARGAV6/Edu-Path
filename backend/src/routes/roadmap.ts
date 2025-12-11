@@ -4,6 +4,10 @@ import { supabaseAdmin } from '../config/supabase';
 
 const router = Router();
 
+// Roadmap cache
+const roadmapCache: Record<string, { data: any; timestamp: number }> = {}
+const CACHE_TTL = 30 * 60 * 1000 // 30 minutes for roadmaps
+
 interface GenerateRoadmapBody {
   fullName: string;
   email: string;
@@ -57,74 +61,48 @@ router.post('/generate', async (req: Request, res: Response) => {
     
     const levelInfo = levelConfig[data.experienceLevel as keyof typeof levelConfig] || levelConfig.beginner;
 
-    const systemPrompt = `You are an expert career advisor creating a ${data.experienceLevel.toUpperCase()} level learning roadmap for ${data.careerGoal}.
+    // Check cache first
+    const cacheKey = `${data.careerGoal}-${data.experienceLevel}-${data.skills.join(',')}`
+    const cached = roadmapCache[cacheKey]
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return res.json({ success: true, roadmap: cached.data, cached: true })
+    }
 
-IMPORTANT: This is a ${data.experienceLevel} level path. Generate content specifically for this level:
-- Focus: ${levelInfo.focus}
-- Complexity: ${levelInfo.complexity}
-- Example topics for this level: ${levelInfo.examples}
+    const systemPrompt = `You are a career advisor. Create a ${data.experienceLevel} level roadmap for ${data.careerGoal}.
 
-User Profile:
-- Name: ${data.fullName}
-- Current Skills: ${data.skills.length > 0 ? data.skills.join(', ') : 'Starting fresh'}
-- Experience Level: ${data.experienceLevel}
-- Career Goal: ${data.careerGoal}
-- Hours per Week: ${data.hoursPerWeek}
+Level: ${data.experienceLevel} - Focus on ${levelInfo.focus}
+Skills: ${data.skills.length > 0 ? data.skills.join(', ') : 'None yet'}
+Hours/week: ${data.hoursPerWeek}
 
-Create a SEQUENTIAL learning roadmap with ${levelInfo.milestoneCount} milestones that build upon each other.
-Each milestone should be a clear step in the learning journey.
-
-Return response in this exact JSON format:
+Return JSON with ${levelInfo.milestoneCount} milestones:
 {
-  "recommendedPath": "Brief overview of this ${data.experienceLevel} path",
+  "recommendedPath": "Brief path overview",
   "milestones": [
     {
       "id": 1,
-      "title": "Step 1: [Clear Title]",
-      "description": "What you'll master in this step",
-      "skills": ["skill1", "skill2", "skill3"],
+      "title": "Step 1: Title",
+      "description": "What you'll learn",
+      "skills": ["skill1", "skill2"],
       "estimatedWeeks": 3,
       "status": "current",
-      "topics": [
-        {
-          "name": "Specific Topic",
-          "description": "Detailed description",
-          "isCompleted": false
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "title": "Step 2: [Clear Title]",
-      "description": "Next step building on Step 1",
-      "skills": ["skill1", "skill2"],
-      "estimatedWeeks": 4,
-      "status": "locked",
-      "topics": []
+      "topics": [{"name": "Topic", "description": "Desc", "isCompleted": false}]
     }
   ]
 }
 
-CRITICAL REQUIREMENTS:
-1. Generate EXACTLY ${levelInfo.milestoneCount} milestones for ${data.experienceLevel} level
-2. Each milestone must be UNIQUE and SEQUENTIAL (Step 1, Step 2, etc.)
-3. Content must match ${data.experienceLevel} complexity - ${levelInfo.complexity}
-4. First milestone status = "current", all others = "locked"
-5. Include realistic estimatedWeeks based on ${data.hoursPerWeek} hours/week
-6. Topics should be specific to ${data.careerGoal} at ${data.experienceLevel} level
-7. DO NOT repeat the same topics across different levels`;
+First milestone = "current", others = "locked". Be concise.`;
 
     const completion = await groq.chat.completions.create({
       messages: [
         { role: 'system', content: systemPrompt },
         {
           role: 'user',
-          content: `Generate a personalized learning roadmap for me to become a ${data.careerGoal}. I currently know: ${data.skills.join(', ')}. I am at ${data.experienceLevel} level and can dedicate ${data.hoursPerWeek} hours per week.`,
+          content: `Create a ${data.experienceLevel} roadmap for ${data.careerGoal}. Current skills: ${data.skills.join(', ') || 'none'}.`,
         },
       ],
       model: 'llama-3.3-70b-versatile',
-      temperature: 0.7,
-      max_tokens: 4000,
+      temperature: 0.6,
+      max_tokens: 2500,
       response_format: { type: 'json_object' },
     });
 
@@ -133,7 +111,20 @@ CRITICAL REQUIREMENTS:
       throw new Error('No response from AI');
     }
 
-    const roadmapData = JSON.parse(responseContent);
+    let roadmapData
+    try {
+      roadmapData = JSON.parse(responseContent);
+    } catch {
+      // Fallback roadmap
+      roadmapData = {
+        recommendedPath: `Your path to becoming a ${data.careerGoal}`,
+        milestones: [
+          { id: 1, title: 'Step 1: Foundations', description: 'Learn the basics', skills: ['HTML', 'CSS', 'JavaScript'], estimatedWeeks: 4, status: 'current', topics: [{ name: 'Web Basics', description: 'HTML, CSS fundamentals', isCompleted: false }] },
+          { id: 2, title: 'Step 2: Core Skills', description: 'Build core competencies', skills: ['React', 'Node.js'], estimatedWeeks: 6, status: 'locked', topics: [{ name: 'Framework Basics', description: 'Learn a framework', isCompleted: false }] },
+          { id: 3, title: 'Step 3: Projects', description: 'Build real projects', skills: ['Git', 'Deployment'], estimatedWeeks: 4, status: 'locked', topics: [{ name: 'Portfolio', description: 'Create projects', isCompleted: false }] }
+        ]
+      }
+    }
 
     // Create roadmap object
     const roadmap = {
@@ -145,6 +136,9 @@ CRITICAL REQUIREMENTS:
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
+
+    // Cache the result
+    roadmapCache[cacheKey] = { data: roadmap, timestamp: Date.now() }
 
     res.json({ success: true, roadmap });
   } catch (error) {

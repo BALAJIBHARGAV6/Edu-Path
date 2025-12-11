@@ -1,50 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import dynamic from 'next/dynamic'
 import { 
   Code2, Sparkles, CheckCircle2, Clock, ChevronRight, 
-  Play, Lightbulb, RotateCcw, Send, TrendingUp, Filter
+  Play, Lightbulb, RotateCcw, Send, TrendingUp, Filter, Loader2, Terminal
 } from 'lucide-react'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
 import { useStore } from '@/lib/store'
 import PageWrapper from '@/components/PageWrapper'
 import GradientText from '@/components/GradientText'
+import toast from 'react-hot-toast'
+
+// Dynamically import Monaco Editor (client-side only)
+const Editor = dynamic(() => import('@monaco-editor/react'), { ssr: false })
 
 const PRIMARY = '#2563EB'
-
-// Problems organized by topic
-const problemLibrary: Record<string, any[]> = {
-  'JavaScript': [
-    { id: 1, title: 'Two Sum', difficulty: 'easy', category: 'Arrays', acceptance: 78, desc: 'Find two numbers that add up to target' },
-    { id: 2, title: 'Reverse String', difficulty: 'easy', category: 'Strings', acceptance: 85, desc: 'Reverse a string in-place' },
-    { id: 3, title: 'Palindrome Check', difficulty: 'easy', category: 'Strings', acceptance: 80, desc: 'Check if string is palindrome' },
-  ],
-  'React': [
-    { id: 4, title: 'Counter Component', difficulty: 'easy', category: 'Components', acceptance: 90, desc: 'Build a simple counter with hooks' },
-    { id: 5, title: 'Todo List', difficulty: 'medium', category: 'State', acceptance: 72, desc: 'Create a todo app with CRUD operations' },
-    { id: 6, title: 'Fetch Data Hook', difficulty: 'medium', category: 'Hooks', acceptance: 65, desc: 'Build a custom useFetch hook' },
-  ],
-  'CSS': [
-    { id: 7, title: 'Center a Div', difficulty: 'easy', category: 'Layout', acceptance: 95, desc: 'Multiple ways to center elements' },
-    { id: 8, title: 'Responsive Navbar', difficulty: 'medium', category: 'Layout', acceptance: 70, desc: 'Build a mobile-friendly navbar' },
-    { id: 9, title: 'Flexbox Gallery', difficulty: 'easy', category: 'Flexbox', acceptance: 82, desc: 'Create a responsive image gallery' },
-  ],
-  'TypeScript': [
-    { id: 10, title: 'Generic Function', difficulty: 'medium', category: 'Generics', acceptance: 60, desc: 'Implement a generic utility function' },
-    { id: 11, title: 'Type Guards', difficulty: 'medium', category: 'Types', acceptance: 55, desc: 'Create type-safe guards' },
-  ],
-  'Node.js': [
-    { id: 12, title: 'REST API Endpoint', difficulty: 'medium', category: 'APIs', acceptance: 68, desc: 'Build a CRUD endpoint' },
-    { id: 13, title: 'File Upload', difficulty: 'hard', category: 'APIs', acceptance: 45, desc: 'Handle multipart file uploads' },
-  ],
-  'General': [
-    { id: 14, title: 'FizzBuzz', difficulty: 'easy', category: 'Logic', acceptance: 92, desc: 'Classic programming challenge' },
-    { id: 15, title: 'Valid Parentheses', difficulty: 'easy', category: 'Stacks', acceptance: 72, desc: 'Check if brackets are balanced' },
-    { id: 16, title: 'Merge Arrays', difficulty: 'medium', category: 'Arrays', acceptance: 65, desc: 'Merge two sorted arrays' },
-  ]
-}
 
 const difficultyColors: Record<string, { bg: string; text: string }> = {
   easy: { bg: 'rgba(16,185,129,0.15)', text: '#10B981' },
@@ -60,54 +33,116 @@ export default function PracticePage() {
   const [filter, setFilter] = useState<'all' | 'easy' | 'medium' | 'hard'>('all')
   const [selectedProblem, setSelectedProblem] = useState<any | null>(null)
   const [completedProblems, setCompletedProblems] = useState<number[]>([])
-  const [selectedTopic, setSelectedTopic] = useState<string>('all')
-  const [code, setCode] = useState(`function solution() {\n  // Your code here\n  \n}`)
+  const [selectedTopic, setSelectedTopic] = useState<string>('JavaScript')
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('javascript')
+  const [code, setCode] = useState(`function solution(nums, target) {
+  // Write your solution here
+  
+  return [];
+}`)
   const [output, setOutput] = useState<string | null>(null)
   const [running, setRunning] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [challenges, setChallenges] = useState<any[]>([])
 
-  // Get user's selected skills (you can get this from user profile/settings)
-  const userSkills = ['JavaScript', 'React', 'CSS'] // This should come from user settings
+  // Get user skills from roadmap or default
+  const userSkills = currentRoadmap?.ai_generated_path?.milestones
+    ?.flatMap((m: any) => m.skills || [])
+    .filter((skill: string, index: number, self: string[]) => self.indexOf(skill) === index)
+    .slice(0, 5) || ['JavaScript', 'React', 'TypeScript']
 
-  // Get relevant problems based on user skills
-  const getRecommendedProblems = () => {
-    let problems: any[] = []
+  // Fetch AI-generated challenges
+  // Cache challenges to avoid refetching
+  const [challengeCache, setChallengeCache] = useState<Record<string, any[]>>({})
+  const [submitted, setSubmitted] = useState(false)
+
+  const fetchChallenges = async (category: string = 'JavaScript', difficulty: string = 'all') => {
+    const cacheKey = `${category}-${difficulty}`
     
-    // If user has selected skills, prioritize those
-    if (userSkills.length > 0) {
-      userSkills.forEach(skill => {
-        if (problemLibrary[skill]) {
-          problems = [...problems, ...problemLibrary[skill]]
-        }
+    // Use cached data if available
+    if (challengeCache[cacheKey]) {
+      setChallenges(challengeCache[cacheKey])
+      return
+    }
+    
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({
+        category,
+        difficulty: difficulty === 'all' ? 'mixed' : difficulty,
+        count: '6'
       })
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/practice/challenges?${params}`)
+      const data = await response.json()
+      
+      if (data.success) {
+        setChallenges(data.challenges)
+        setChallengeCache(prev => ({ ...prev, [cacheKey]: data.challenges }))
+      } else {
+        toast.error('Failed to load challenges')
+      }
+    } catch (error) {
+      console.error('Error fetching challenges:', error)
+      toast.error('Failed to load challenges')
+    } finally {
+      setLoading(false)
     }
-    
-    // Add general problems if we don't have enough
-    if (problems.length < 6) {
-      problems = [...problems, ...problemLibrary['General']]
-    }
-    
-    // Remove duplicates
-    return Array.from(new Map(problems.map(p => [p.id, p])).values())
   }
 
-  const allProblems = getRecommendedProblems()
-  const topics = ['all', ...Object.keys(problemLibrary)]
+  useEffect(() => {
+    fetchChallenges(selectedTopic, filter)
+  }, [selectedTopic, filter])
+
+  const topics = ['JavaScript', 'React', 'TypeScript', 'Node.js', 'Python', 'CSS', 'Algorithms']
   
-  const filteredProblems = allProblems.filter(p => {
-    const matchesDifficulty = filter === 'all' || p.difficulty === filter
-    const matchesTopic = selectedTopic === 'all' || 
-      Object.entries(problemLibrary).some(([topic, probs]) => 
-        topic === selectedTopic && probs.some(prob => prob.id === p.id)
-      )
-    return matchesDifficulty && matchesTopic
-  })
+  const filteredProblems = challenges
 
   const runCode = async () => {
+    if (!selectedProblem) {
+      toast.error('No problem selected')
+      return
+    }
+    
     setRunning(true)
     setOutput(null)
-    await new Promise(r => setTimeout(r, 1500))
-    setOutput('✓ All test cases passed!\n\nTest 1: Passed ✓\nTest 2: Passed ✓\nTest 3: Passed ✓')
-    setRunning(false)
+    
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/practice/submit-solution`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user?.id || 'anonymous',
+          challengeId: selectedProblem.id,
+          code,
+          language: selectedLanguage
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        const evaluation = data.evaluation
+        setOutput(`${evaluation.passed ? '✅ PASSED' : '❌ FAILED'} - Score: ${evaluation.score}/100\n\n📝 Feedback:\n${evaluation.feedback}\n\n🧪 Tests: ${evaluation.testsPassed}/${evaluation.testsTotal} passed\n\n✅ Strengths:\n${evaluation.strengths?.map((s: string) => `  • ${s}`).join('\n') || 'N/A'}\n\n⚠️ Improvements:\n${evaluation.improvements?.map((i: string) => `  • ${i}`).join('\n') || 'N/A'}\n\n⚡ Complexity: ${evaluation.efficiency || 'N/A'}`)
+        
+        setSubmitted(true)
+        if (evaluation.passed) {
+          markComplete(selectedProblem.id)
+          toast.success('🎉 Solution passed!')
+        } else {
+          toast.error('Solution needs improvement')
+        }
+      } else {
+        setOutput(`Error: ${data.error || 'Failed to evaluate solution'}`)
+        toast.error('Evaluation failed')
+      }
+    } catch (error) {
+      console.error('Error submitting solution:', error)
+      setOutput('❌ Error evaluating solution. Please check if the backend server is running.')
+      toast.error('Failed to connect to server')
+    } finally {
+      setRunning(false)
+    }
   }
 
   const markComplete = (id: number) => {
@@ -127,14 +162,15 @@ export default function PracticePage() {
     <PageWrapper>
       <div className="min-h-screen pt-16 sm:pt-20 md:pt-24" style={{ background: isDark ? '#0A0A0F' : '#F8FFFE' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {selectedProblem ? (
-          /* Problem Solving View */
-          <div className="max-w-7xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-8 h-[calc(100vh-8rem)]">
-              {/* Left - Problem Description */}
-              <div className="flex flex-col">
+          {selectedProblem ? (
+            // Problem Solving View
+            <div className="max-w-7xl mx-auto">
+              <div className="grid lg:grid-cols-2 gap-8 h-[calc(100vh-8rem)]">
+                {/* Left - Problem Description */}
+                <div className="flex flex-col">
                 <div className="mb-4">
                   <button 
+                    type="button"
                     onClick={() => setSelectedProblem(null)}
                     className="flex items-center gap-2 text-sm font-medium hover:opacity-70 transition-opacity"
                     style={{ color: accent }}
@@ -186,54 +222,80 @@ export default function PracticePage() {
               {/* Right - Code Editor */}
               <div className="flex flex-col">
                 {/* Editor Header */}
-                <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-t-2xl p-4 border-b border-gray-700">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex gap-2">
-                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      </div>
-                      <span className="text-gray-300 text-sm font-medium">solution.js</span>
+                <div className="rounded-t-2xl p-4 border-b flex items-center justify-between"
+                  style={{ 
+                    background: isDark ? '#1E1E1E' : '#F3F4F6',
+                    borderColor: border
+                  }}>
+                  <div className="flex items-center gap-3">
+                    <div className="flex gap-2">
+                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <select className="bg-gray-800 text-gray-300 px-3 py-1.5 rounded-lg text-sm border border-gray-600 outline-none focus:border-blue-500">
-                        <option>JavaScript</option>
-                        <option>Python</option>
-                        <option>Java</option>
-                        <option>C++</option>
-                      </select>
-                      <motion.button 
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => setCode(`function solution() {\n  // Your code here\n  \n}`)}
-                        className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-                      >
-                        <RotateCcw className="w-4 h-4 text-gray-300" />
-                      </motion.button>
-                    </div>
+                    <span className="text-sm font-medium" style={{ color: text }}>
+                      solution.{selectedLanguage === 'javascript' ? 'js' : selectedLanguage === 'python' ? 'py' : selectedLanguage === 'typescript' ? 'ts' : 'java'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <select 
+                      value={selectedLanguage}
+                      onChange={(e) => setSelectedLanguage(e.target.value)}
+                      className="px-3 py-1.5 rounded-lg text-sm border outline-none transition-colors"
+                      style={{
+                        background: subtle,
+                        color: text,
+                        borderColor: border
+                      }}
+                    >
+                      <option value="javascript">JavaScript</option>
+                      <option value="typescript">TypeScript</option>
+                      <option value="python">Python</option>
+                      <option value="java">Java</option>
+                      <option value="cpp">C++</option>
+                    </select>
+                    <motion.button 
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setCode(`function solution(nums, target) {\n  // Write your solution here\n  \n  return [];\n}`)}
+                      className="p-2 rounded-lg transition-colors hover:opacity-80"
+                      style={{ background: subtle }}
+                    >
+                      <RotateCcw className="w-4 h-4" style={{ color: muted }} />
+                    </motion.button>
                   </div>
                 </div>
                 
-                {/* Code Editor Area */}
-                <div className="flex-1 bg-gray-900 relative">
-                  <textarea
+                {/* Monaco Code Editor */}
+                <div className="flex-1 min-h-[400px] border-b" style={{ borderColor: border }}>
+                  <Editor
+                    height="100%"
+                    language={selectedLanguage}
                     value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    className="w-full h-full p-6 font-mono text-sm resize-none outline-none bg-transparent text-gray-100"
-                    style={{ 
-                      lineHeight: '1.6',
-                      fontFamily: 'JetBrains Mono, Consolas, Monaco, monospace'
+                    onChange={(value) => setCode(value || '')}
+                    theme={isDark ? 'vs-dark' : 'light'}
+                    options={{
+                      minimap: { enabled: false },
+                      fontSize: 14,
+                      lineNumbers: 'on',
+                      roundedSelection: true,
+                      scrollBeyondLastLine: false,
+                      automaticLayout: true,
+                      tabSize: 2,
+                      wordWrap: 'on',
+                      padding: { top: 16, bottom: 16 },
+                      suggestOnTriggerCharacters: true,
+                      quickSuggestions: true,
+                      folding: true,
+                      lineDecorationsWidth: 10,
+                      lineNumbersMinChars: 3,
                     }}
-                    spellCheck={false}
-                    placeholder="// Write your solution here..."
+                    loading={
+                      <div className="flex items-center justify-center h-full" style={{ background: isDark ? '#1E1E1E' : '#FFFFFF' }}>
+                        <Loader2 className="w-6 h-6 animate-spin" style={{ color: accent }} />
+                      </div>
+                    }
                   />
-                  {/* Line numbers simulation */}
-                  <div className="absolute left-2 top-6 text-gray-500 text-sm font-mono pointer-events-none">
-                    {code.split('\n').map((_, i) => (
-                      <div key={i} className="h-6 leading-6">{i + 1}</div>
-                    ))}
-                  </div>
                 </div>
                 
                 {/* Output Area */}
@@ -241,68 +303,109 @@ export default function PracticePage() {
                   <motion.div 
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
-                    className="bg-gray-800 border-t border-gray-700 p-4"
+                    className="p-4 border-t"
+                    style={{ 
+                      background: isDark ? '#1E1E1E' : '#F9FAFB',
+                      borderColor: border
+                    }}
                   >
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                      <h3 className="text-sm font-semibold text-gray-200">Console Output</h3>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Terminal className="w-4 h-4" style={{ color: accent }} />
+                        <h3 className="text-sm font-semibold" style={{ color: text }}>Console Output</h3>
+                      </div>
+                      {submitted && (
+                        <motion.button
+                          type="button"
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => {
+                            setSelectedProblem(null)
+                            setOutput(null)
+                            setSubmitted(false)
+                            setCode(`function solution(nums, target) {\n  // Write your solution here\n  \n  return [];\n}`)
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all"
+                          style={{ background: accent, color: '#FFFFFF' }}
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                          Next Problem
+                        </motion.button>
+                      )}
                     </div>
-                    <pre className="text-sm font-mono text-green-400 bg-gray-900 p-3 rounded-lg">
+                    <pre className="text-sm font-mono whitespace-pre-wrap p-3 rounded-lg max-h-48 overflow-y-auto" 
+                      style={{ 
+                        background: isDark ? '#252526' : '#FFFFFF',
+                        color: output.includes('PASSED') ? '#10B981' : output.includes('FAILED') ? '#EF4444' : text,
+                        border: `1px solid ${border}`
+                      }}>
                       {output}
                     </pre>
                   </motion.div>
                 )}
                 
                 {/* Action Bar */}
-                <div className="bg-white dark:bg-gray-900 rounded-b-2xl p-4 border-t border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={runCode}
-                        disabled={running}
-                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-semibold transition-all shadow-lg disabled:opacity-50"
-                      >
-                        {running ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Running...
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-4 h-4" />
-                            Run Code
-                          </>
-                        )}
-                      </motion.button>
-                      
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => markComplete(selectedProblem.id)}
-                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-semibold transition-all shadow-lg"
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                        Submit
-                      </motion.button>
-                    </div>
+                <div className="rounded-b-2xl p-4 border-t flex items-center justify-between"
+                  style={{ background: subtle, borderColor: border }}>
+                  <div className="text-xs" style={{ color: muted }}>
+                    <kbd className="px-2 py-1 rounded" style={{ background: isDark ? '#2D2D2D' : '#E5E7EB' }}>Ctrl</kbd>
+                    {' + '}
+                    <kbd className="px-2 py-1 rounded" style={{ background: isDark ? '#2D2D2D' : '#E5E7EB' }}>Enter</kbd>
+                    {' '}to run
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        runCode()
+                      }}
+                      disabled={running}
+                      className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all shadow-lg disabled:opacity-50"
+                      style={{ background: accent, color: '#FFFFFF' }}
+                    >
+                      {running ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Running...
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-4 h-4" />
+                          Run Code
+                        </>
+                      )}
+                    </motion.button>
                     
-                    <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">Ctrl</kbd>
-                        +
-                        <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs">Enter</kbd>
-                        to run
-                      </span>
-                    </div>
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        runCode()
+                      }}
+                      disabled={running}
+                      className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all shadow-lg disabled:opacity-50"
+                      style={{ background: '#10B981', color: '#FFFFFF' }}
+                    >
+                      <Send className="w-4 h-4" />
+                      Submit
+                    </motion.button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          /* Problems List View */
+          <>
+          {/* Problems List View */}
           <div className="max-w-6xl mx-auto">
           {/* Header */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-16">
@@ -437,6 +540,7 @@ export default function PracticePage() {
             ))}
           </div>
           </div>
+          </>
         )}
         </div>
       </div>

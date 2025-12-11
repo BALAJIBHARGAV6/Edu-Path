@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { 
   Trophy, 
@@ -11,8 +11,13 @@ import {
   TrendingUp,
   Users,
   Target,
-  Zap
+  Zap,
+  Loader2
 } from 'lucide-react'
+import { useTheme } from '@/context/ThemeContext'
+import PageWrapper from '@/components/PageWrapper'
+import GradientText from '@/components/GradientText'
+import toast from 'react-hot-toast'
 
 const timeFilters = [
   { id: 'weekly', label: 'This Week' },
@@ -20,292 +25,252 @@ const timeFilters = [
   { id: 'alltime', label: 'All Time' },
 ]
 
-const leaderboardData = [
-  {
-    rank: 1,
-    name: 'Alex Chen',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-    xp: 15420,
-    streak: 45,
-    problemsSolved: 234,
-    badge: 'crown'
-  },
-  {
-    rank: 2,
-    name: 'Sarah Johnson',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-    xp: 14890,
-    streak: 38,
-    problemsSolved: 212,
-    badge: 'silver'
-  },
-  {
-    rank: 3,
-    name: 'Michael Park',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
-    xp: 13750,
-    streak: 32,
-    problemsSolved: 198,
-    badge: 'bronze'
-  },
-  {
-    rank: 4,
-    name: 'Emily Davis',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
-    xp: 12340,
-    streak: 28,
-    problemsSolved: 176,
-    badge: null
-  },
-  {
-    rank: 5,
-    name: 'David Kim',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop',
-    xp: 11890,
-    streak: 25,
-    problemsSolved: 165,
-    badge: null
-  },
-  {
-    rank: 6,
-    name: 'Lisa Wang',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop',
-    xp: 10560,
-    streak: 21,
-    problemsSolved: 154,
-    badge: null
-  },
-  {
-    rank: 7,
-    name: 'James Wilson',
-    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop',
-    xp: 9870,
-    streak: 18,
-    problemsSolved: 142,
-    badge: null
-  },
-  {
-    rank: 8,
-    name: 'Anna Martinez',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop',
-    xp: 9120,
-    streak: 15,
-    problemsSolved: 128,
-    badge: null
-  },
-  {
-    rank: 9,
-    name: 'Chris Lee',
-    avatar: 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?w=100&h=100&fit=crop',
-    xp: 8450,
-    streak: 12,
-    problemsSolved: 115,
-    badge: null
-  },
-  {
-    rank: 10,
-    name: 'Sophie Brown',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop',
-    xp: 7890,
-    streak: 10,
-    problemsSolved: 102,
-    badge: null
-  },
-]
-
-const currentUser = {
-  rank: 156,
-  name: 'You',
-  xp: 1250,
-  streak: 7,
-  problemsSolved: 23
-}
-
 export default function LeaderboardPage() {
-  const [timeFilter, setTimeFilter] = useState('weekly')
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
+  const [timeFilter, setTimeFilter] = useState('alltime')
+  const [loading, setLoading] = useState(true)
+  const [leaderboardData, setLeaderboardData] = useState<any[]>([])
+
+  const bg = isDark ? '#09090B' : '#FFFFFF'
+  const text = isDark ? '#FAFAFA' : '#09090B'
+  const muted = isDark ? '#A1A1AA' : '#71717A'
+  const subtle = isDark ? '#18181B' : '#F4F4F5'
+  const border = isDark ? '#27272A' : '#E4E4E7'
+  const accent = '#2563EB'
+
+  // Fetch leaderboard data from API
+  const fetchLeaderboard = async (timeFrame: string) => {
+    setLoading(true)
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/practice/leaderboard?timeFrame=${timeFrame}&limit=50`
+      )
+      const data = await response.json()
+      
+      if (data.success) {
+        setLeaderboardData(data.leaderboard)
+      } else {
+        toast.error('Failed to load leaderboard')
+      }
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error)
+      toast.error('Failed to load leaderboard')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchLeaderboard(timeFilter)
+  }, [timeFilter])
+
+  const getBadgeIcon = (badge: string | null) => {
+    if (badge === 'crown') return <Crown className="w-5 h-5 text-yellow-400" />
+    if (badge === 'silver') return <Medal className="w-5 h-5 text-gray-400" />
+    if (badge === 'bronze') return <Medal className="w-5 h-5 text-amber-600" />
+    return null
+  }
 
   return (
-    <div className="min-h-screen pt-24 pb-16">
-      <div className="max-w-5xl mx-auto px-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <span className="badge badge-primary mb-4">LEADERBOARD</span>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Top <span className="gradient-text">Learners</span>
-          </h1>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Compete with fellow learners and climb the ranks
-          </p>
-        </motion.div>
-
-        {/* Time Filter */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="flex justify-center gap-2 mb-8"
-        >
-          {timeFilters.map((filter) => (
-            <button
-              key={filter.id}
-              onClick={() => setTimeFilter(filter.id)}
-              className={`px-6 py-2 rounded-xl font-medium transition-all ${
-                timeFilter === filter.id
-                  ? 'bg-indigo-500 text-white'
-                  : 'bg-white/5 text-gray-400 hover:bg-white/10'
-              }`}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </motion.div>
-
-        {/* Top 3 Podium */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="grid grid-cols-3 gap-4 mb-8"
-        >
-          {/* 2nd Place */}
-          <div className="flex flex-col items-center pt-8">
-            <div className="relative mb-4">
-              <img 
-                src={leaderboardData[1].avatar}
-                alt={leaderboardData[1].name}
-                className="w-20 h-20 rounded-2xl object-cover border-4 border-gray-400"
-              />
-              <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center">
-                <Medal className="w-5 h-5 text-white" />
-              </div>
-            </div>
-            <p className="font-semibold text-center">{leaderboardData[1].name}</p>
-            <p className="text-gray-400 text-sm">{leaderboardData[1].xp.toLocaleString()} XP</p>
-            <div className="mt-4 w-full h-24 bg-gradient-to-t from-gray-400/20 to-transparent rounded-t-xl" />
-          </div>
-
-          {/* 1st Place */}
-          <div className="flex flex-col items-center">
-            <div className="relative mb-4">
-              <img 
-                src={leaderboardData[0].avatar}
-                alt={leaderboardData[0].name}
-                className="w-24 h-24 rounded-2xl object-cover border-4 border-amber-400"
-              />
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <Crown className="w-8 h-8 text-amber-400" />
-              </div>
-              <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-amber-400 flex items-center justify-center">
-                <Trophy className="w-5 h-5 text-white" />
-              </div>
-            </div>
-            <p className="font-bold text-lg text-center">{leaderboardData[0].name}</p>
-            <p className="text-amber-400 font-semibold">{leaderboardData[0].xp.toLocaleString()} XP</p>
-            <div className="mt-4 w-full h-32 bg-gradient-to-t from-amber-400/20 to-transparent rounded-t-xl" />
-          </div>
-
-          {/* 3rd Place */}
-          <div className="flex flex-col items-center pt-12">
-            <div className="relative mb-4">
-              <img 
-                src={leaderboardData[2].avatar}
-                alt={leaderboardData[2].name}
-                className="w-16 h-16 rounded-2xl object-cover border-4 border-amber-700"
-              />
-              <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full bg-amber-700 flex items-center justify-center">
-                <Medal className="w-4 h-4 text-white" />
-              </div>
-            </div>
-            <p className="font-semibold text-center text-sm">{leaderboardData[2].name}</p>
-            <p className="text-gray-400 text-sm">{leaderboardData[2].xp.toLocaleString()} XP</p>
-            <div className="mt-4 w-full h-16 bg-gradient-to-t from-amber-700/20 to-transparent rounded-t-xl" />
-          </div>
-        </motion.div>
-
-        {/* Your Rank Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="card p-6 mb-8 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border-indigo-500/20"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold">
-                #{currentUser.rank}
-              </div>
-              <div>
-                <p className="font-semibold">Your Ranking</p>
-                <p className="text-sm text-gray-400">{currentUser.xp.toLocaleString()} XP earned</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-6">
-              <div className="text-center">
-                <div className="flex items-center gap-1 text-orange-500">
-                  <Flame className="w-5 h-5" />
-                  <span className="font-bold">{currentUser.streak}</span>
-                </div>
-                <p className="text-xs text-gray-500">Streak</p>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center gap-1 text-emerald-500">
-                  <Target className="w-5 h-5" />
-                  <span className="font-bold">{currentUser.problemsSolved}</span>
-                </div>
-                <p className="text-xs text-gray-500">Solved</p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Full Leaderboard */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="card overflow-hidden"
-        >
+    <PageWrapper>
+      <div className="min-h-screen pt-20 sm:pt-24 pb-16 px-4 sm:px-6 lg:px-8" style={{ background: bg }}>
+        <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="grid grid-cols-12 gap-4 p-4 border-b border-white/5 text-sm font-medium text-gray-500">
-            <div className="col-span-1">Rank</div>
-            <div className="col-span-5">User</div>
-            <div className="col-span-2 text-center">XP</div>
-            <div className="col-span-2 text-center">Streak</div>
-            <div className="col-span-2 text-center">Solved</div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-12"
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6" 
+              style={{ background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.2)' }}>
+              <Trophy className="w-4 h-4" style={{ color: accent }} />
+              <span className="text-sm font-medium" style={{ color: accent }}>Top Performers</span>
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4" style={{ color: text }}>
+              <GradientText>Leaderboard</GradientText>
+            </h1>
+            <p className="text-lg" style={{ color: muted }}>
+              Compete with learners worldwide and track your progress
+            </p>
+          </motion.div>
+
+          {/* Time Filter */}
+          <div className="flex justify-center gap-2 mb-8">
+            {timeFilters.map((tf) => (
+              <button
+                key={tf.id}
+                onClick={() => setTimeFilter(tf.id)}
+                className="px-6 py-2 rounded-lg font-medium transition-all"
+                style={{
+                  background: timeFilter === tf.id ? accent : subtle,
+                  color: timeFilter === tf.id ? '#FFFFFF' : muted,
+                  border: `1px solid ${timeFilter === tf.id ? accent : border}`
+                }}
+              >
+                {tf.label}
+              </button>
+            ))}
           </div>
 
-          {/* Rows */}
-          {leaderboardData.map((user, index) => (
-            <div 
-              key={user.rank}
-              className={`grid grid-cols-12 gap-4 p-4 items-center hover:bg-white/5 transition-colors ${
-                index !== leaderboardData.length - 1 ? 'border-b border-white/5' : ''
-              }`}
-            >
-              <div className="col-span-1">
-                <span className={`font-bold ${
-                  user.rank === 1 ? 'text-amber-400' :
-                  user.rank === 2 ? 'text-gray-400' :
-                  user.rank === 3 ? 'text-amber-700' :
-                  'text-gray-500'
-                }`}>
-                  #{user.rank}
-                </span>
-              </div>
-              <div className="col-span-5 flex items-center gap-3">
-                <img 
-                  src={user.avatar}
-                  alt={user.name}
-                  className="w-10 h-10 rounded-xl object-cover"
-                />
-                <div>
-                  <p className="font-medium">{user.name}</p>
-                  {user.badge && (
-                    <span className={`text-xs ${
+          {/* Loading State */}
+          {loading && (
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin" style={{ color: accent }} />
+            </div>
+          )}
+
+          {/* Leaderboard */}
+          {!loading && leaderboardData.length === 0 && (
+            <div className="text-center py-20" style={{ color: muted }}>
+              <Users className="w-16 h-16 mx-auto mb-4 opacity-50" />
+              <p>No data available for this time period</p>
+            </div>
+          )}
+
+          {!loading && leaderboardData.length > 0 && (
+            <div className="space-y-6">
+              {/* Top 3 Podium */}
+              {leaderboardData.length >= 3 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="grid grid-cols-3 gap-4 mb-8"
+                >
+                  {/* 2nd Place */}
+                  <div className="flex flex-col items-center pt-8">
+                    <div className="relative mb-4">
+                      <img 
+                        src={leaderboardData[1].avatar}
+                        alt={leaderboardData[1].name}
+                        className="w-20 h-20 rounded-2xl object-cover border-4"
+                        style={{ borderColor: '#9CA3AF' }}
+                      />
+                      <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center"
+                        style={{ background: '#9CA3AF' }}>
+                        {getBadgeIcon('silver')}
+                      </div>
+                    </div>
+                    <p className="font-semibold text-center" style={{ color: text }}>{leaderboardData[1].name}</p>
+                    <p className="text-sm" style={{ color: muted }}>{leaderboardData[1].xp.toLocaleString()} XP</p>
+                    <div className="mt-4 w-full h-24 rounded-t-xl" style={{ background: 'linear-gradient(to top, rgba(156,163,175,0.2), transparent)' }} />
+                  </div>
+
+                  {/* 1st Place */}
+                  <div className="flex flex-col items-center">
+                    <div className="relative mb-4">
+                      <img 
+                        src={leaderboardData[0].avatar}
+                        alt={leaderboardData[0].name}
+                        className="w-24 h-24 rounded-2xl object-cover border-4"
+                        style={{ borderColor: '#FBBF24' }}
+                      />
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                        <Crown className="w-8 h-8 text-yellow-400" />
+                      </div>
+                      <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center"
+                        style={{ background: '#FBBF24' }}>
+                        {getBadgeIcon('crown')}
+                      </div>
+                    </div>
+                    <p className="font-bold text-lg text-center" style={{ color: text }}>{leaderboardData[0].name}</p>
+                    <p className="font-semibold" style={{ color: '#FBBF24' }}>{leaderboardData[0].xp.toLocaleString()} XP</p>
+                    <div className="mt-4 w-full h-32 rounded-t-xl" style={{ background: 'linear-gradient(to top, rgba(251,191,36,0.2), transparent)' }} />
+                  </div>
+
+                  {/* 3rd Place */}
+                  <div className="flex flex-col items-center pt-12">
+                    <div className="relative mb-4">
+                      <img 
+                        src={leaderboardData[2].avatar}
+                        alt={leaderboardData[2].name}
+                        className="w-16 h-16 rounded-2xl object-cover border-4"
+                        style={{ borderColor: '#CD7F32' }}
+                      />
+                      <div className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center"
+                        style={{ background: '#CD7F32' }}>
+                        {getBadgeIcon('bronze')}
+                      </div>
+                    </div>
+                    <p className="font-semibold text-center text-sm" style={{ color: text }}>{leaderboardData[2].name}</p>
+                    <p className="text-sm" style={{ color: muted }}>{leaderboardData[2].xp.toLocaleString()} XP</p>
+                    <div className="mt-4 w-full h-16 rounded-t-xl" style={{ background: 'linear-gradient(to top, rgba(205,127,50,0.2), transparent)' }} />
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Full Leaderboard Table */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-2xl overflow-hidden"
+                style={{ background: subtle, border: `1px solid ${border}` }}
+              >
+                {/* Header */}
+                <div className="grid grid-cols-12 gap-4 p-4 text-sm font-medium border-b" 
+                  style={{ borderColor: border, color: muted }}>
+                  <div className="col-span-1">Rank</div>
+                  <div className="col-span-5">User</div>
+                  <div className="col-span-2 text-center">XP</div>
+                  <div className="col-span-2 text-center">Streak</div>
+                  <div className="col-span-2 text-center">Solved</div>
+                </div>
+
+                {/* Rows */}
+                {leaderboardData.map((user, index) => (
+                  <div 
+                    key={user.rank}
+                    className="grid grid-cols-12 gap-4 p-4 items-center transition-colors hover:opacity-80"
+                    style={{ 
+                      borderBottom: index !== leaderboardData.length - 1 ? `1px solid ${border}` : 'none',
+                      background: index < 3 ? (isDark ? 'rgba(37,99,235,0.05)' : 'rgba(37,99,235,0.03)') : 'transparent'
+                    }}
+                  >
+                    <div className="col-span-1">
+                      <span className="font-bold" style={{ 
+                        color: user.rank === 1 ? '#FBBF24' : user.rank === 2 ? '#9CA3AF' : user.rank === 3 ? '#CD7F32' : muted 
+                      }}>
+                        #{user.rank}
+                      </span>
+                    </div>
+                    <div className="col-span-5 flex items-center gap-3">
+                      <img 
+                        src={user.avatar}
+                        alt={user.name}
+                        className="w-10 h-10 rounded-xl object-cover"
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium" style={{ color: text }}>{user.name}</p>
+                          {user.badge && getBadgeIcon(user.badge)}
+                        </div>
+                        {user.achievements > 0 && (
+                          <p className="text-xs" style={{ color: muted }}>{user.achievements} achievements</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="col-span-2 text-center">
+                      <span className="font-semibold" style={{ color: accent }}>{user.xp.toLocaleString()}</span>
+                    </div>
+                    <div className="col-span-2 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Flame className="w-4 h-4 text-orange-500" />
+                        <span className="font-medium" style={{ color: text }}>{user.streak}</span>
+                      </div>
+                    </div>
+                    <div className="col-span-2 text-center">
+                      <span className="font-medium" style={{ color: text }}>{user.problemsSolved}</span>
+                    </div>
+                  </div>
+                ))}
+              </motion.div>
+            </div>
+          )}
+        </div>
+      </div>
+    </PageWrapper>
+  )
+}
                       user.badge === 'crown' ? 'text-amber-400' :
                       user.badge === 'silver' ? 'text-gray-400' :
                       'text-amber-700'

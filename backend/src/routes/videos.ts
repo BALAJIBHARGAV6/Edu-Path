@@ -49,7 +49,7 @@ router.get('/search', async (req: Request, res: Response) => {
       throw new Error('YouTube API request failed');
     }
 
-    const data = await response.json();
+    const data: any = await response.json();
 
     const videos = data.items.map((item: any) => ({
       videoId: item.id.videoId,

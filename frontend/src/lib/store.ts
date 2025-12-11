@@ -244,7 +244,36 @@ export const useStore = create<AppState>()(
       partialize: (state) => ({
         onboardingData: state.onboardingData,
         currentRoadmap: state.currentRoadmap,
+        userProgress: state.userProgress,
+        userSkills: state.userSkills,
       }),
     }
   )
 )
+
+// Cache for API responses
+export const apiCache = {
+  challenges: new Map<string, { data: any; timestamp: number }>(),
+  notes: new Map<string, { data: any; timestamp: number }>(),
+  videos: new Map<string, { data: any; timestamp: number }>(),
+  
+  CACHE_TTL: 5 * 60 * 1000, // 5 minutes
+  
+  get(type: 'challenges' | 'notes' | 'videos', key: string) {
+    const cache = this[type].get(key)
+    if (cache && Date.now() - cache.timestamp < this.CACHE_TTL) {
+      return cache.data
+    }
+    return null
+  },
+  
+  set(type: 'challenges' | 'notes' | 'videos', key: string, data: any) {
+    this[type].set(key, { data, timestamp: Date.now() })
+  },
+  
+  clear() {
+    this.challenges.clear()
+    this.notes.clear()
+    this.videos.clear()
+  }
+}

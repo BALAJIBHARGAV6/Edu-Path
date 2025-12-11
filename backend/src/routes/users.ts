@@ -83,4 +83,38 @@ router.post('/skills', async (req: Request, res: Response) => {
   }
 });
 
+// Get user stats for profile
+router.get('/stats/:userId', async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+
+    // Get comprehensive user statistics
+    const [profile, progress, achievements, sessions] = await Promise.all([
+      supabaseAdmin.from('user_profiles').select('*').eq('id', userId).single(),
+      supabaseAdmin.from('user_progress').select('*').eq('user_id', userId),
+      supabaseAdmin.from('user_achievements').select('*, achievements(*)').eq('user_id', userId),
+      supabaseAdmin.from('learning_sessions').select('duration_seconds').eq('user_id', userId)
+    ]);
+
+    const completedTopics = progress.data?.filter((p: any) => p.watched).length || 0;
+    const totalStudyTime = sessions.data?.reduce((sum: number, s: any) => sum + (s.duration_seconds || 0), 0) || 0;
+    const xp = (completedTopics * 50) + (achievements.data?.length || 0) * 100 + (profile.data?.streak_count || 0) * 10;
+
+    res.json({
+      success: true,
+      stats: {
+        xp,
+        streak: profile.data?.streak_count || 0,
+        completedTopics,
+        totalStudyTime: Math.round(totalStudyTime / 60), // in minutes
+        achievements: achievements.data || [],
+        rank: 'Calculating...', // Would need to query all users to calculate
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch stats' });
+  }
+});
+
 export default router;

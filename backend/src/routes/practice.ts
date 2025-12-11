@@ -1,29 +1,97 @@
 import { Router, Request, Response } from 'express'
 import Groq from 'groq-sdk'
+import { supabaseAdmin } from '../config/supabase'
 
 const router = Router()
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
-// Get practice challenges
+// Simple in-memory cache for challenges
+const challengeCache: Record<string, { data: any; timestamp: number }> = {}
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes cache
+
+// Generate AI practice challenges
 router.get('/challenges', async (req: Request, res: Response) => {
-  const { category, difficulty, skill } = req.query
+  const { category, difficulty, skill, count = 6 } = req.query
+  const categoryFilter = category || skill || 'programming'
+  const difficultyFilter = difficulty || 'mixed'
+  
+  // Check cache first
+  const cacheKey = `${categoryFilter}-${difficultyFilter}-${count}`
+  const cached = challengeCache[cacheKey]
+  
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return res.json({ success: true, challenges: cached.data, cached: true })
+  }
 
-  // Sample challenges - in production, fetch from database
-  const challenges = [
-    { id: 1, title: 'Two Sum', difficulty: 'easy', category: 'algorithms', skills: ['javascript', 'arrays'], points: 10 },
-    { id: 2, title: 'Reverse String', difficulty: 'easy', category: 'algorithms', skills: ['javascript', 'strings'], points: 10 },
-    { id: 3, title: 'Binary Search', difficulty: 'medium', category: 'algorithms', skills: ['javascript', 'searching'], points: 20 },
-    { id: 4, title: 'Build Counter', difficulty: 'easy', category: 'react', skills: ['react', 'hooks'], points: 15 },
-    { id: 5, title: 'Fetch API Data', difficulty: 'medium', category: 'react', skills: ['react', 'api'], points: 20 },
-    { id: 6, title: 'CSS Flexbox', difficulty: 'easy', category: 'css', skills: ['css', 'flexbox'], points: 10 },
-  ]
+  try {
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: `You are an expert programming educator. Generate ${count} coding practice challenges.
+          Category: ${categoryFilter}
+          Difficulty: ${difficultyFilter}
+          
+          Return ONLY valid JSON in this format:
+          {
+            "challenges": [
+              {
+                "id": 1,
+                "title": "Challenge Title",
+                "difficulty": "easy|medium|hard",
+                "category": "${categoryFilter}",
+                "desc": "Brief description",
+                "acceptance": 75,
+                "skills": ["skill1", "skill2"],
+                "points": 10-50
+              }
+            ]
+          }`
+        },
+        {
+          role: 'user',
+          content: `Generate ${count} ${difficultyFilter} level coding challenges for ${categoryFilter}. Keep descriptions brief.`
+        }
+      ],
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.8,
+      max_tokens: 2000,
+      response_format: { type: 'json_object' }
+    })
 
-  let filtered = challenges
-  if (category) filtered = filtered.filter(c => c.category === category)
-  if (difficulty) filtered = filtered.filter(c => c.difficulty === difficulty)
-  if (skill) filtered = filtered.filter(c => c.skills.includes(skill as string))
-
-  res.json({ challenges: filtered })
+    const content = completion.choices[0]?.message?.content || ''
+    
+    let data
+    try {
+      data = JSON.parse(content)
+    } catch {
+      const jsonMatch = content.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        data = JSON.parse(jsonMatch[0])
+      } else {
+        throw new Error('Invalid response format')
+      }
+    }
+    
+    // Cache the result
+    challengeCache[cacheKey] = { data: data.challenges, timestamp: Date.now() }
+    
+    res.json({ success: true, challenges: data.challenges })
+  } catch (error) {
+    console.error('Challenge generation error:', error)
+    
+    // Return fallback challenges if AI fails
+    const fallbackChallenges = [
+      { id: 1, title: 'Two Sum', difficulty: 'easy', category: categoryFilter, desc: 'Find two numbers that add up to target', acceptance: 85, skills: [categoryFilter], points: 10 },
+      { id: 2, title: 'Reverse String', difficulty: 'easy', category: categoryFilter, desc: 'Reverse a given string', acceptance: 90, skills: [categoryFilter], points: 10 },
+      { id: 3, title: 'Palindrome Check', difficulty: 'easy', category: categoryFilter, desc: 'Check if string is palindrome', acceptance: 80, skills: [categoryFilter], points: 15 },
+      { id: 4, title: 'FizzBuzz', difficulty: 'easy', category: categoryFilter, desc: 'Classic FizzBuzz problem', acceptance: 95, skills: [categoryFilter], points: 10 },
+      { id: 5, title: 'Array Max', difficulty: 'easy', category: categoryFilter, desc: 'Find maximum in array', acceptance: 88, skills: [categoryFilter], points: 10 },
+      { id: 6, title: 'Count Vowels', difficulty: 'easy', category: categoryFilter, desc: 'Count vowels in string', acceptance: 82, skills: [categoryFilter], points: 10 }
+    ]
+    
+    res.json({ success: true, challenges: fallbackChallenges, fallback: true })
+  }
 })
 
 // Generate AI test for a topic
@@ -132,23 +200,164 @@ router.post('/evaluate-test', async (req: Request, res: Response) => {
   })
 })
 
-// Get recommended videos from curated channels
-router.get('/recommended-videos', async (req: Request, res: Response) => {
-  const { skill, category } = req.query
+// Submit challenge solution and evaluate
+router.post('/submit-solution', async (req: Request, res: Response) => {
+  const { userId, challengeId, code, language } = req.body
 
-  // Curated educational channels with quality content
-  const channels = [
-    { name: 'freeCodeCamp', id: 'UC8butISFwT-Wl7EV0hUK0BQ', category: 'fullstack' },
-    { name: 'Traversy Media', id: 'UC29ju8bIPH5as8OGnQzwJyA', category: 'frontend' },
-    { name: 'The Net Ninja', id: 'UCW5YeuERMmlnqo4oq8vwUpg', category: 'frontend' },
-    { name: 'Fireship', id: 'UCsBjURrPoezykLs9EqgamOA', category: 'fullstack' },
-    { name: 'Web Dev Simplified', id: 'UCFbNIlppjAuEX4znoulh0Cw', category: 'frontend' },
-    { name: 'Programming with Mosh', id: 'UC-T8W79DN6PBnzomelvqJYw', category: 'fullstack' },
-    { name: 'Tech With Tim', id: 'UC4JX40jDee_tINbkjycV4Sg', category: 'python' },
-    { name: 'Academind', id: 'UCSJbGtTlrDami-tDGPUV9-w', category: 'fullstack' },
-  ]
+  if (!challengeId || !code) {
+    return res.status(400).json({ error: 'Missing required fields' })
+  }
 
-  res.json({ channels })
+  try {
+    // Use AI to evaluate the solution
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: `Evaluate this code. Return JSON:
+{
+  "passed": true|false,
+  "score": 0-100,
+  "feedback": "Brief feedback",
+  "strengths": ["str1"],
+  "improvements": ["imp1"],
+  "efficiency": "O(n)",
+  "testsPassed": 8,
+  "testsTotal": 10
+}`
+        },
+        {
+          role: 'user',
+          content: `${language} code:\n${code}`
+        }
+      ],
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.3,
+      max_tokens: 800,
+      response_format: { type: 'json_object' }
+    })
+
+    const content = completion.choices[0]?.message?.content || ''
+    
+    let evaluation
+    try {
+      // Try to parse the response directly
+      evaluation = JSON.parse(content)
+    } catch {
+      // Try to extract JSON from the response
+      const jsonMatch = content.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        evaluation = JSON.parse(jsonMatch[0])
+      } else {
+        // Fallback evaluation if AI response is malformed
+        evaluation = {
+          passed: false,
+          score: 50,
+          feedback: 'Code received. Unable to fully analyze. Please try again.',
+          strengths: ['Code submitted successfully'],
+          improvements: ['Consider adding comments', 'Add error handling'],
+          efficiency: 'Unable to determine',
+          testsPassed: 0,
+          testsTotal: 5
+        }
+      }
+    }
+    
+    // Ensure all required fields exist
+    evaluation = {
+      passed: evaluation.passed ?? false,
+      score: evaluation.score ?? 50,
+      feedback: evaluation.feedback ?? 'Evaluation complete',
+      strengths: evaluation.strengths ?? [],
+      improvements: evaluation.improvements ?? [],
+      efficiency: evaluation.efficiency ?? 'N/A',
+      testsPassed: evaluation.testsPassed ?? 0,
+      testsTotal: evaluation.testsTotal ?? 5
+    }
+
+    // Save to database if user is logged in
+    if (userId && userId !== 'anonymous') {
+      try {
+        await supabaseAdmin.from('user_progress').upsert({
+          user_id: userId,
+          topic_id: parseInt(challengeId) || 1,
+          watched: evaluation.passed,
+          notes: JSON.stringify(evaluation),
+          updated_at: new Date().toISOString()
+        })
+      } catch (dbError) {
+        console.log('Database save skipped:', dbError)
+      }
+    }
+
+    res.json({ success: true, evaluation })
+  } catch (error) {
+    console.error('Solution evaluation error:', error)
+    res.status(500).json({ success: false, error: 'Failed to evaluate solution' })
+  }
+})
+
+// Get leaderboard data with real-time calculations
+router.get('/leaderboard', async (req: Request, res: Response) => {
+  const { timeFrame = 'alltime', limit = 50 } = req.query
+
+  try {
+    let dateFilter = ''
+    const now = new Date()
+    
+    if (timeFrame === 'weekly') {
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      dateFilter = weekAgo.toISOString()
+    } else if (timeFrame === 'monthly') {
+      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+      dateFilter = monthAgo.toISOString()
+    }
+
+    // Get user stats from database
+    let query = supabaseAdmin
+      .from('user_profiles')
+      .select(`
+        id,
+        full_name,
+        avatar_url,
+        streak_count,
+        user_progress(count),
+        user_achievements(count)
+      `)
+      .order('streak_count', { ascending: false })
+      .limit(parseInt(limit as string))
+
+    if (dateFilter) {
+      query = query.gte('last_activity_date', dateFilter)
+    }
+
+    const { data: users, error } = await query
+
+    if (error) throw error
+
+    // Calculate XP and rank
+    const leaderboard = users?.map((user: any, index: number) => {
+      const problemsSolved = user.user_progress?.[0]?.count || 0
+      const achievements = user.user_achievements?.[0]?.count || 0
+      const xp = (problemsSolved * 50) + (achievements * 100) + (user.streak_count * 10)
+
+      return {
+        rank: index + 1,
+        name: user.full_name || 'Anonymous',
+        avatar: user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
+        xp,
+        streak: user.streak_count || 0,
+        problemsSolved,
+        achievements,
+        badge: index === 0 ? 'crown' : index === 1 ? 'silver' : index === 2 ? 'bronze' : null
+      }
+    }) || []
+
+    res.json({ success: true, leaderboard })
+  } catch (error) {
+    console.error('Leaderboard error:', error)
+    res.status(500).json({ success: false, error: 'Failed to fetch leaderboard' })
+  }
 })
 
 export default router
