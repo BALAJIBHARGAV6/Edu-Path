@@ -28,6 +28,15 @@ app.use(cors({
 app.use(morgan('dev'));
 app.use(express.json());
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'EduPath API Server', 
+    status: 'running',
+    endpoints: ['/health', '/api/roadmap', '/api/videos', '/api/users', '/api/progress', '/api/notes', '/api/practice', '/api/resources']
+  });
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
