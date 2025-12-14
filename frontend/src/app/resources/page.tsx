@@ -279,7 +279,7 @@ export default function ResourcesPage() {
           </h1>
           
           <p className="text-lg sm:text-xl leading-relaxed max-w-3xl mx-auto mb-8" style={{ color: muted }}>
-            Generate AI-powered study notes for topics in your learning path or chat with our AI assistant for instant help.
+            Generate AI-powered study notes for topics in your learning path or chat with our AI assistant for instant help
           </p>
         </motion.div>
 
