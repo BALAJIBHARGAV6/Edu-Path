@@ -369,16 +369,146 @@ export default function RoadmapsPage() {
       description: `Personalized roadmap to master ${customGoal}`,
       estimatedWeeks: 12,
       concepts: [
-        { id: 1, name: `${customGoal} Fundamentals`, description: 'Learn the basic concepts and principles', isCompleted: false, category: 'Basics' },
-        { id: 2, name: 'Core Skills Development', description: 'Build essential skills and knowledge', isCompleted: false, category: 'Basics' },
-        { id: 3, name: 'Practical Application', description: 'Apply concepts in real scenarios', isCompleted: false, category: 'Intermediate' },
-        { id: 4, name: 'Advanced Techniques', description: 'Master advanced methods and strategies', isCompleted: false, category: 'Intermediate' },
-        { id: 5, name: 'Problem Solving', description: 'Develop critical thinking and solutions', isCompleted: false, category: 'Intermediate' },
-        { id: 6, name: 'Best Practices', description: 'Learn industry standards and conventions', isCompleted: false, category: 'Advanced' },
-        { id: 7, name: 'Optimization & Performance', description: 'Improve efficiency and quality', isCompleted: false, category: 'Advanced' },
-        { id: 8, name: 'Real-world Projects', description: 'Build portfolio-worthy applications', isCompleted: false, category: 'Projects' },
-        { id: 9, name: 'Testing & Debugging', description: 'Ensure quality and reliability', isCompleted: false, category: 'Advanced' },
-        { id: 10, name: 'Professional Development', description: 'Prepare for career advancement', isCompleted: false, category: 'Projects' }
+        { 
+          id: 1, 
+          name: `${customGoal} Fundamentals`, 
+          description: 'Learn the basic concepts and principles', 
+          isCompleted: false, 
+          category: 'Basics',
+          subTopics: [
+            `Introduction to ${customGoal}`,
+            'Core concepts and terminology',
+            'Basic principles and foundations',
+            'Getting started guide',
+            'Essential tools setup'
+          ]
+        },
+        { 
+          id: 2, 
+          name: 'Core Skills Development', 
+          description: 'Build essential skills and knowledge', 
+          isCompleted: false, 
+          category: 'Basics',
+          subTopics: [
+            'Fundamental techniques',
+            'Building blocks mastery',
+            'Hands-on exercises',
+            'Skill assessment',
+            'Practice projects'
+          ]
+        },
+        { 
+          id: 3, 
+          name: 'Practical Application', 
+          description: 'Apply concepts in real scenarios', 
+          isCompleted: false, 
+          category: 'Intermediate',
+          subTopics: [
+            'Real-world use cases',
+            'Practical implementations',
+            'Case study analysis',
+            'Scenario-based learning',
+            'Applied exercises'
+          ]
+        },
+        { 
+          id: 4, 
+          name: 'Advanced Techniques', 
+          description: 'Master advanced methods and strategies', 
+          isCompleted: false, 
+          category: 'Intermediate',
+          subTopics: [
+            'Advanced methodologies',
+            'Complex problem solving',
+            'Expert-level techniques',
+            'Optimization strategies',
+            'Industry best practices'
+          ]
+        },
+        { 
+          id: 5, 
+          name: 'Problem Solving', 
+          description: 'Develop critical thinking and solutions', 
+          isCompleted: false, 
+          category: 'Intermediate',
+          subTopics: [
+            'Analytical thinking',
+            'Problem decomposition',
+            'Solution design patterns',
+            'Debugging strategies',
+            'Critical analysis'
+          ]
+        },
+        { 
+          id: 6, 
+          name: 'Best Practices', 
+          description: 'Learn industry standards and conventions', 
+          isCompleted: false, 
+          category: 'Advanced',
+          subTopics: [
+            'Industry standards',
+            'Code/work quality guidelines',
+            'Professional conventions',
+            'Maintenance strategies',
+            'Documentation practices'
+          ]
+        },
+        { 
+          id: 7, 
+          name: 'Optimization & Performance', 
+          description: 'Improve efficiency and quality', 
+          isCompleted: false, 
+          category: 'Advanced',
+          subTopics: [
+            'Performance tuning',
+            'Efficiency improvements',
+            'Resource optimization',
+            'Scalability techniques',
+            'Monitoring and metrics'
+          ]
+        },
+        { 
+          id: 8, 
+          name: 'Real-world Projects', 
+          description: 'Build portfolio-worthy applications', 
+          isCompleted: false, 
+          category: 'Projects',
+          subTopics: [
+            'Project planning',
+            'Full implementation',
+            'Deployment strategies',
+            'Portfolio presentation',
+            'Project documentation'
+          ]
+        },
+        { 
+          id: 9, 
+          name: 'Testing & Quality', 
+          description: 'Ensure quality and reliability', 
+          isCompleted: false, 
+          category: 'Advanced',
+          subTopics: [
+            'Testing methodologies',
+            'Quality assurance',
+            'Validation techniques',
+            'Error prevention',
+            'Continuous improvement'
+          ]
+        },
+        { 
+          id: 10, 
+          name: 'Professional Development', 
+          description: 'Prepare for career advancement', 
+          isCompleted: false, 
+          category: 'Projects',
+          subTopics: [
+            'Career path planning',
+            'Resume and portfolio',
+            'Interview preparation',
+            'Networking strategies',
+            'Continuous learning'
+          ]
+        }
       ]
     }
     
@@ -406,16 +536,146 @@ export default function RoadmapsPage() {
       description: `Complete ${selectedStack.name} learning path for ${level} developers`,
       estimatedWeeks: selectedStack.duration.includes('months') ? parseInt(selectedStack.duration) * 4 : 8,
       concepts: [
-        { id: 1, name: `${selectedStack.name} Setup & Environment`, description: 'Install tools and configure development environment', isCompleted: false, category: 'Setup' },
-        { id: 2, name: 'Core Syntax & Fundamentals', description: 'Learn basic syntax and core concepts', isCompleted: false, category: 'Basics' },
-        { id: 3, name: 'Variables & Data Types', description: 'Understanding data structures and variables', isCompleted: false, category: 'Basics' },
-        { id: 4, name: 'Functions & Methods', description: 'Creating reusable code blocks', isCompleted: false, category: 'Intermediate' },
-        { id: 5, name: 'Control Flow & Logic', description: 'Conditional statements and loops', isCompleted: false, category: 'Intermediate' },
-        { id: 6, name: 'Error Handling', description: 'Managing and debugging errors', isCompleted: false, category: 'Intermediate' },
-        { id: 7, name: 'Advanced Features', description: 'Exploring advanced functionality', isCompleted: false, category: 'Advanced' },
-        { id: 8, name: 'Best Practices & Patterns', description: 'Industry standards and design patterns', isCompleted: false, category: 'Advanced' },
-        { id: 9, name: 'Testing & Debugging', description: 'Writing tests and debugging techniques', isCompleted: false, category: 'Advanced' },
-        { id: 10, name: 'Real-world Projects', description: 'Build production-ready applications', isCompleted: false, category: 'Projects' }
+        { 
+          id: 1, 
+          name: `${selectedStack.name} Setup & Environment`, 
+          description: 'Install tools and configure development environment', 
+          isCompleted: false, 
+          category: 'Setup',
+          subTopics: [
+            'Installing required software and tools',
+            'Setting up code editor (VS Code)',
+            'Configuring terminal and command line',
+            'Version control setup (Git)',
+            'Creating your first project structure'
+          ]
+        },
+        { 
+          id: 2, 
+          name: 'Core Syntax & Fundamentals', 
+          description: 'Learn basic syntax and core concepts', 
+          isCompleted: false, 
+          category: 'Basics',
+          subTopics: [
+            'Understanding basic syntax rules',
+            'Writing your first program',
+            'Comments and documentation',
+            'Code structure and formatting',
+            'Basic input/output operations'
+          ]
+        },
+        { 
+          id: 3, 
+          name: 'Variables & Data Types', 
+          description: 'Understanding data structures and variables', 
+          isCompleted: false, 
+          category: 'Basics',
+          subTopics: [
+            'Declaring and initializing variables',
+            'Primitive data types (string, number, boolean)',
+            'Complex data types (arrays, objects)',
+            'Type conversion and coercion',
+            'Constants and immutability'
+          ]
+        },
+        { 
+          id: 4, 
+          name: 'Functions & Methods', 
+          description: 'Creating reusable code blocks', 
+          isCompleted: false, 
+          category: 'Intermediate',
+          subTopics: [
+            'Function declaration and expressions',
+            'Parameters and arguments',
+            'Return values and scope',
+            'Arrow functions and callbacks',
+            'Higher-order functions'
+          ]
+        },
+        { 
+          id: 5, 
+          name: 'Control Flow & Logic', 
+          description: 'Conditional statements and loops', 
+          isCompleted: false, 
+          category: 'Intermediate',
+          subTopics: [
+            'If/else statements',
+            'Switch cases',
+            'For and while loops',
+            'Break and continue',
+            'Logical operators'
+          ]
+        },
+        { 
+          id: 6, 
+          name: 'Error Handling', 
+          description: 'Managing and debugging errors', 
+          isCompleted: false, 
+          category: 'Intermediate',
+          subTopics: [
+            'Try/catch blocks',
+            'Throwing custom errors',
+            'Error types and messages',
+            'Debugging techniques',
+            'Logging and monitoring'
+          ]
+        },
+        { 
+          id: 7, 
+          name: 'Advanced Features', 
+          description: 'Exploring advanced functionality', 
+          isCompleted: false, 
+          category: 'Advanced',
+          subTopics: [
+            'Asynchronous programming',
+            'Promises and async/await',
+            'Modules and imports',
+            'Classes and OOP',
+            'Decorators and metadata'
+          ]
+        },
+        { 
+          id: 8, 
+          name: 'Best Practices & Patterns', 
+          description: 'Industry standards and design patterns', 
+          isCompleted: false, 
+          category: 'Advanced',
+          subTopics: [
+            'Code organization patterns',
+            'DRY and SOLID principles',
+            'Design patterns overview',
+            'Clean code guidelines',
+            'Performance optimization'
+          ]
+        },
+        { 
+          id: 9, 
+          name: 'Testing & Debugging', 
+          description: 'Writing tests and debugging techniques', 
+          isCompleted: false, 
+          category: 'Advanced',
+          subTopics: [
+            'Unit testing basics',
+            'Test-driven development',
+            'Integration testing',
+            'Debugging tools and techniques',
+            'Code coverage and quality'
+          ]
+        },
+        { 
+          id: 10, 
+          name: 'Real-world Projects', 
+          description: 'Build production-ready applications', 
+          isCompleted: false, 
+          category: 'Projects',
+          subTopics: [
+            'Project planning and architecture',
+            'Building a complete application',
+            'Deployment and hosting',
+            'CI/CD pipelines',
+            'Maintenance and updates'
+          ]
+        }
       ]
     }
     
@@ -586,50 +846,42 @@ export default function RoadmapsPage() {
                             className="overflow-hidden"
                           >
                             <div className="p-4 pt-0 space-y-4" style={{ borderTop: '1px solid ' + border }}>
+                              {/* Sub-topics to learn */}
                               <div className="pt-4">
-                                <h4 className="text-sm font-semibold mb-2" style={{ color: text }}>📖 What you'll learn:</h4>
-                                <p className="text-sm" style={{ color: muted }}>{concept.description}</p>
+                                <h4 className="text-sm font-semibold mb-3" style={{ color: text }}>📚 Topics to Master:</h4>
+                                <div className="grid gap-2">
+                                  {(concept.subTopics || []).map((topic: string, idx: number) => (
+                                    <div 
+                                      key={idx}
+                                      className="flex items-center gap-3 p-3 rounded-lg"
+                                      style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}
+                                    >
+                                      <div 
+                                        className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0"
+                                        style={{ background: accent + '20', color: accent }}
+                                      >
+                                        {idx + 1}
+                                      </div>
+                                      <span className="text-sm" style={{ color: text }}>{topic}</span>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                               
                               <div className="flex items-center gap-2 text-sm">
                                 <Clock className="w-4 h-4" style={{ color: muted }} />
-                                <span style={{ color: muted }}>Estimated time: 2-4 hours</span>
+                                <span style={{ color: muted }}>Estimated time: {concept.subTopics?.length || 5} hours</span>
                               </div>
                               
-                              <div>
-                                <h4 className="text-sm font-semibold mb-2" style={{ color: text }}>📚 Resources:</h4>
-                                <ul className="space-y-1 text-sm" style={{ color: muted }}>
-                                  <li className="flex items-start gap-2">
-                                    <span style={{ color: accent }}>•</span>
-                                    <span>Official documentation and tutorials</span>
-                                  </li>
-                                  <li className="flex items-start gap-2">
-                                    <span style={{ color: accent }}>•</span>
-                                    <span>Video courses and walkthroughs</span>
-                                  </li>
-                                  <li className="flex items-start gap-2">
-                                    <span style={{ color: accent }}>•</span>
-                                    <span>Practice exercises and challenges</span>
-                                  </li>
-                                </ul>
-                              </div>
-                              
+                              {/* Action Button - Get AI Notes */}
                               <div className="flex items-center gap-3 pt-2">
-                                <Link 
-                                  href={`/learn/${concept.id}`}
-                                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-all hover:opacity-90"
+                                <Link
+                                  href={`/resources?topic=${encodeURIComponent(concept.name)}&subtopics=${encodeURIComponent(JSON.stringify(concept.subTopics || []))}`}
+                                  className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-white transition-all hover:opacity-90"
                                   style={{ background: accent }}
                                 >
-                                  <Play className="w-4 h-4" />
-                                  Start Learning
-                                </Link>
-                                <Link
-                                  href={`/resources?topic=${encodeURIComponent(concept.name)}`}
-                                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all"
-                                  style={{ background: border, color: text }}
-                                >
-                                  <BookOpen className="w-4 h-4" />
-                                  Get Notes
+                                  <Sparkles className="w-4 h-4" />
+                                  Generate AI Notes for All Topics
                                 </Link>
                               </div>
                             </div>
