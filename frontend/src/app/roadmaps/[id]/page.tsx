@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   ArrowLeft,
   BookmarkPlus,
@@ -18,11 +18,15 @@ import {
   ChevronRight,
   Sparkles,
   Download,
-  Loader2
+  Loader2,
+  BookOpen,
+  Check
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useStore } from '@/lib/store'
+import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
+import PageWrapper from '@/components/PageWrapper'
 
 // Sample roadmap data structure (like roadmap.sh)
 const roadmapData: Record<string, any> = {
@@ -153,17 +157,66 @@ export default function RoadmapDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { user } = useAuth()
-  const { setCurrentRoadmap } = useStore()
+  const { currentRoadmap, setCurrentRoadmap } = useStore()
   const [roadmap, setRoadmap] = useState<any>(null)
   const [expandedSections, setExpandedSections] = useState<number[]>([1, 2, 3])
+  const [expandedTopics, setExpandedTopics] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
+  const [completedTopics, setCompletedTopics] = useState<string[]>([])
+  const [loadingProgress, setLoadingProgress] = useState(true)
 
+  // Scroll to top when component mounts
   useEffect(() => {
-    const id = params.id as string
-    if (roadmapData[id]) {
-      setRoadmap(roadmapData[id])
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
+
+  // Load roadmap from Supabase for current user
+  useEffect(() => {
+    const loadUserRoadmap = async () => {
+      if (!user) return
+      
+      try {
+        const { data: roadmaps, error } = await supabase
+          .from('roadmaps')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+        
+        if (!error && roadmaps && roadmaps.length > 0) {
+          const userRoadmap = roadmaps[0]
+          setRoadmap(userRoadmap)
+          setCurrentRoadmap(userRoadmap)
+          
+          // Load progress from Supabase
+          const { data: progressData } = await supabase
+            .from('user_progress')
+            .select('completed_topics')
+            .eq('user_id', user.id)
+            .eq('roadmap_id', userRoadmap.id)
+            .single()
+          
+          if (progressData?.completed_topics) {
+            setCompletedTopics(progressData.completed_topics)
+          }
+        } else if (currentRoadmap) {
+          // Fallback to store
+          setRoadmap(currentRoadmap)
+        }
+      } catch (err) {
+        console.error('Error loading roadmap:', err)
+        // Fallback to sample data
+        const id = params.id as string
+        if (roadmapData[id]) {
+          setRoadmap(roadmapData[id])
+        }
+      } finally {
+        setLoadingProgress(false)
+      }
     }
-  }, [params.id])
+    
+    loadUserRoadmap()
+  }, [user, params.id, currentRoadmap, setCurrentRoadmap])
 
   const toggleSection = (sectionId: number) => {
     setExpandedSections(prev => 
@@ -171,6 +224,49 @@ export default function RoadmapDetailPage() {
         ? prev.filter(id => id !== sectionId)
         : [...prev, sectionId]
     )
+  }
+
+  const toggleTopic = (topicId: string) => {
+    setExpandedTopics(prev => 
+      prev.includes(topicId) 
+        ? prev.filter(id => id !== topicId)
+        : [...prev, topicId]
+    )
+  }
+
+  const markTopicComplete = async (topicId: string, sectionId: number) => {
+    if (!user || !roadmap) return
+    
+    const newCompleted = completedTopics.includes(topicId)
+      ? completedTopics.filter(id => id !== topicId)
+      : [...completedTopics, topicId]
+    
+    setCompletedTopics(newCompleted)
+    
+    // Save to Supabase
+    try {
+      const { error } = await supabase
+        .from('user_progress')
+        .upsert({
+          user_id: user.id,
+          roadmap_id: roadmap.id,
+          completed_topics: newCompleted,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,roadmap_id'
+        })
+      
+      if (error) throw error
+      
+      if (!completedTopics.includes(topicId)) {
+        toast.success('✅ Topic completed!')
+      } else {
+        toast.success('Topic unmarked')
+      }
+    } catch (err) {
+      console.error('Error saving progress:', err)
+      toast.error('Failed to save progress')
+    }
   }
 
   const handleSaveRoadmap = async () => {
@@ -195,21 +291,36 @@ export default function RoadmapDetailPage() {
     router.push('/dashboard')
   }
 
-  if (!roadmap) {
+  if (!roadmap || loadingProgress) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-      </div>
+      <PageWrapper>
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+        </div>
+      </PageWrapper>
     )
   }
 
-  const totalTopics = roadmap.sections.reduce((acc: number, s: any) => acc + s.topics.length, 0)
-  const completedTopics = roadmap.sections.reduce(
-    (acc: number, s: any) => acc + s.topics.filter((t: any) => t.completed).length, 0
-  )
-  const progress = Math.round((completedTopics / totalTopics) * 100)
+  // Get sections from roadmap - handle both old format and new AI format
+  const sections = roadmap.sections || roadmap.ai_generated_path?.milestones?.map((m: any, i: number) => ({
+    id: i + 1,
+    title: m.title,
+    status: m.status || 'locked',
+    topics: m.topics?.map((t: any, ti: number) => ({
+      id: `${i}-${ti}`,
+      name: t.name || t.title,
+      description: t.description || `Learn about ${t.name || t.title}`,
+      resources: t.resources || [],
+      estimatedTime: t.estimatedTime || '2 hours'
+    })) || []
+  })) || []
+
+  const totalTopics = sections.reduce((acc: number, s: any) => acc + s.topics.length, 0)
+  const completedCount = completedTopics.length
+  const progress = totalTopics > 0 ? Math.round((completedCount / totalTopics) * 100) : 0
 
   return (
+    <PageWrapper>
     <div className="min-h-screen pt-24 pb-16">
       <div className="max-w-6xl mx-auto px-6">
         {/* Back Button */}
@@ -300,7 +411,7 @@ export default function RoadmapDetailPage() {
 
         {/* Roadmap Tree */}
         <div className="space-y-4">
-          {roadmap.sections.map((section: any, index: number) => (
+          {sections.map((section: any, index: number) => (
             <motion.div
               key={section.id}
               initial={{ opacity: 0, y: 20 }}
@@ -348,40 +459,130 @@ export default function RoadmapDetailPage() {
                 {/* Topics */}
                 {expandedSections.includes(section.id) && (
                   <div className="border-t border-white/5 p-5 pt-0">
-                    <div className="grid gap-2 mt-4">
-                      {section.topics.map((topic: any, topicIndex: number) => (
-                        <Link 
-                          key={topicIndex}
-                          href={section.status !== 'locked' ? `/learn/${section.id}-${topicIndex}` : '#'}
-                        >
-                          <div className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
-                            section.status === 'locked' 
-                              ? 'opacity-50 cursor-not-allowed' 
-                              : 'hover:bg-white/5 cursor-pointer'
-                          }`}>
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                              topic.completed 
-                                ? 'bg-emerald-500' 
-                                : 'border-2 border-gray-600'
-                            }`}>
-                              {topic.completed && <CheckCircle2 className="w-4 h-4 text-white" />}
+                    <div className="grid gap-3 mt-4">
+                      {section.topics.map((topic: any, topicIndex: number) => {
+                        const topicId = topic.id || `${section.id}-${topicIndex}`
+                        const isCompleted = completedTopics.includes(topicId)
+                        const isExpanded = expandedTopics.includes(topicId)
+                        
+                        return (
+                          <div key={topicId} className="rounded-xl border border-white/10 overflow-hidden">
+                            {/* Topic Header */}
+                            <div className="flex items-center gap-3 p-4 hover:bg-white/5 transition-all">
+                              <button
+                                onClick={() => toggleTopic(topicId)}
+                                className="flex items-center gap-3 flex-1 text-left"
+                              >
+                                <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
+                                  isCompleted 
+                                    ? 'bg-emerald-500' 
+                                    : 'border-2 border-gray-600'
+                                }`}>
+                                  {isCompleted && <CheckCircle2 className="w-4 h-4 text-white" />}
+                                </div>
+                                <span className={`font-medium ${
+                                  isCompleted ? 'text-gray-400 line-through' : 'text-white'
+                                }`}>
+                                  {topic.name}
+                                </span>
+                                {isExpanded ? (
+                                  <ChevronDown className="w-4 h-4 text-gray-400 ml-auto" />
+                                ) : (
+                                  <ChevronRight className="w-4 h-4 text-gray-400 ml-auto" />
+                                )}
+                              </button>
+                              
+                              <button
+                                onClick={() => markTopicComplete(topicId, section.id)}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all shrink-0 ${
+                                  isCompleted
+                                    ? 'bg-emerald-500 text-white hover:bg-emerald-600'
+                                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                                }`}
+                              >
+                                {isCompleted ? (
+                                  <span className="flex items-center gap-1">
+                                    <Check className="w-4 h-4" /> Completed
+                                  </span>
+                                ) : (
+                                  'Mark Complete'
+                                )}
+                              </button>
                             </div>
-                            <span className={topic.completed ? 'text-gray-400 line-through' : ''}>
-                              {topic.name}
-                            </span>
-                            {section.status !== 'locked' && !topic.completed && (
-                              <Play className="w-4 h-4 text-gray-500 ml-auto" />
-                            )}
+                            
+                            {/* Topic Details (Expanded) */}
+                            <AnimatePresence>
+                              {isExpanded && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.2 }}
+                                  className="border-t border-white/5 bg-white/5"
+                                >
+                                  <div className="p-4 space-y-3">
+                                    {/* Description */}
+                                    {topic.description && (
+                                      <div>
+                                        <h4 className="text-sm font-semibold text-gray-400 mb-1">📖 What you'll learn:</h4>
+                                        <p className="text-sm text-gray-300">{topic.description}</p>
+                                      </div>
+                                    )}
+                                    
+                                    {/* Estimated Time */}
+                                    {topic.estimatedTime && (
+                                      <div className="flex items-center gap-2 text-sm">
+                                        <Clock className="w-4 h-4 text-gray-400" />
+                                        <span className="text-gray-300">Estimated time: {topic.estimatedTime}</span>
+                                      </div>
+                                    )}
+                                    
+                                    {/* Resources */}
+                                    {topic.resources && topic.resources.length > 0 && (
+                                      <div>
+                                        <h4 className="text-sm font-semibold text-gray-400 mb-2">📚 Resources:</h4>
+                                        <ul className="space-y-1">
+                                          {topic.resources.map((resource: string, ri: number) => (
+                                            <li key={ri} className="text-sm text-gray-300 flex items-start gap-2">
+                                              <span className="text-blue-400 mt-0.5">•</span>
+                                              <span>{resource}</span>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
+                                    
+                                    {/* Action Buttons */}
+                                    <div className="flex items-center gap-2 pt-2">
+                                      <Link 
+                                        href={`/learn/${topicId}`}
+                                        className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-all"
+                                      >
+                                        <Play className="w-4 h-4" />
+                                        Start Learning
+                                      </Link>
+                                      <Link
+                                        href={`/resources?topic=${encodeURIComponent(topic.name)}`}
+                                        className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-medium transition-all"
+                                      >
+                                        <BookOpen className="w-4 h-4" />
+                                        Get Notes
+                                      </Link>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
                           </div>
-                        </Link>
-                      ))}
+                        )
+                      })}
                     </div>
                   </div>
                 )}
               </div>
 
               {/* Connector Line */}
-              {index < roadmap.sections.length - 1 && (
+              {index < sections.length - 1 && (
                 <div className="flex justify-start ml-9 py-1">
                   <div className={`w-0.5 h-8 ${
                     section.status === 'completed' ? 'bg-emerald-500' : 'bg-gray-700'
@@ -393,5 +594,6 @@ export default function RoadmapDetailPage() {
         </div>
       </div>
     </div>
+    </PageWrapper>
   )
 }
