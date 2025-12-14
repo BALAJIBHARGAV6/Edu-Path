@@ -484,18 +484,24 @@ export default function PracticePage() {
 
           {/* Problems Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProblems.map((problem, i) => (
-              <motion.div 
-                key={problem.id} 
-                initial={{ opacity: 0, y: 30 }} 
-                animate={{ opacity: 1, y: 0 }} 
-                transition={{ delay: 0.1 * i, type: "spring", stiffness: 100 }}
-                whileHover={{ y: -8, scale: 1.03 }}
-                className="group relative bg-white dark:bg-gray-900 rounded-2xl shadow-lg hover:shadow-2xl transition-all cursor-pointer overflow-hidden border border-gray-200 dark:border-gray-700"
-                onClick={() => setSelectedProblem(problem)}
-              >
-                {/* Gradient Background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            {loading ? (
+              // Loading skeletons
+              [...Array(6)].map((_, i) => (
+                <div key={i} className="skeleton h-64 rounded-2xl" />
+              ))
+            ) : (
+              filteredProblems.map((problem, i) => (
+                <motion.div 
+                  key={problem.id} 
+                  initial={{ opacity: 0, y: 20 }} 
+                  animate={{ opacity: 1, y: 0 }} 
+                  transition={{ delay: 0.05 * i, duration: 0.3 }}
+                  whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                  className="group relative bg-white dark:bg-gray-900 rounded-2xl shadow-lg hover:shadow-2xl transition-all cursor-pointer overflow-hidden border border-gray-200 dark:border-gray-700 will-change-transform"
+                  onClick={() => setSelectedProblem(problem)}
+                >
+                  {/* Gradient Background */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 
                 <div className="relative z-10 p-6">
                   {/* Header */}
@@ -537,7 +543,8 @@ export default function PracticePage() {
                   </div>
                 </div>
               </motion.div>
-            ))}
+            ))
+            )}
           </div>
           </div>
           </>
@@ -547,3 +554,4 @@ export default function PracticePage() {
     </PageWrapper>
   )
 }
+

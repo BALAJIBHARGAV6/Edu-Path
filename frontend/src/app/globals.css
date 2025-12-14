@@ -90,6 +90,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -98,6 +99,8 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
   -moz-osx-font-smoothing: grayscale;
 }
 
@@ -523,4 +526,97 @@ body {
 .focus-ring:focus-visible {
   outline: 2px solid var(--neon-primary);
   outline-offset: 2px;
+}
+/* ============================================
+   PERFORMANCE OPTIMIZATIONS
+   ============================================ */
+
+/* Optimize animations and transforms */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* GPU acceleration for smooth animations */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Smooth scrolling container */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Optimize images */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Prevent layout shift */
+.aspect-ratio-box {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+}
+
+.aspect-ratio-box > * {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Loading states */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(
+    to right,
+    var(--bg-depth-2) 4%,
+    var(--bg-depth-3) 25%,
+    var(--bg-depth-2) 36%
+  );
+  background-size: 1000px 100%;
+}
+
+/* Optimize font rendering */
+@font-face {
+  font-family: 'Inter';
+  font-display: swap;
+}
+
+/* Performance hints for browsers */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+/* Remove will-change after animation */
+.animation-done {
+  will-change: auto;
 }

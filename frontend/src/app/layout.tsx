@@ -13,6 +13,21 @@ export const metadata: Metadata = {
   title: 'EduPath AI | AI-Powered Learning Platform',
   description: 'Transform your career with AI-powered personalized learning paths, coding practice, video tutorials, and real-time progress tracking.',
   keywords: ['education', 'learning', 'AI', 'roadmap', 'career', 'skills', 'coding', 'programming'],
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+  },
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#09090B' }
+  ],
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'EduPath AI',
+  },
 }
 
 export default function RootLayout({
@@ -22,6 +37,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} dark`} suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <meta name="format-detection" content="telephone=no" />
+      </head>
       <body className={`${inter.className} antialiased`}>
         <ThemeProvider>
           <AuthProvider>
