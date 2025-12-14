@@ -1,0 +1,25 @@
+{
+  "name": "EduPath AI - AI-Powered Learning Platform",
+  "short_name": "EduPath AI",
+  "description": "Transform your career with AI-powered personalized learning paths, coding practice, and real-time progress tracking",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090B",
+  "theme_color": "#2563EB",
+  "orientation": "portrait-primary",
+  "categories": ["education", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your learning progress",
+      "url": "/dashboard"
+    },
+    {
+      "name": "Practice",
+      "short_name": "Practice",
+      "description": "Solve coding challenges",
+      "url": "/practice"
+    }
+  ]
+}
