@@ -74,7 +74,7 @@ export default function HomePage() {
                 transition={{ delay: 0.1 }}
                 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-tight mb-6"
               >
-                <span style={{ color: text }}>Master coding with</span>
+                <span style={{ color: text }}>Master your Career with</span>
                 <br />
                 <GradientText>AI-powered roadmaps</GradientText>
               </motion.h1>

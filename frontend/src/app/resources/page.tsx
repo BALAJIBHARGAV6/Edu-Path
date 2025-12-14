@@ -122,11 +122,12 @@ export default function ResourcesPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  useEffect(() => {
-    if (activeTab === 'chat') {
-      scrollToBottom()
-    }
-  }, [messages, activeTab])
+  // Disable auto-scroll - let users control scroll position
+  // useEffect(() => {
+  //   if (activeTab === 'chat') {
+  //     scrollToBottom()
+  //   }
+  // }, [messages, activeTab])
 
   const handleScroll = () => {
     if (chatContainerRef.current) {
@@ -169,6 +170,11 @@ export default function ResourcesPage() {
       inputRef.current.style.height = 'auto'
     }
     setIsLoadingChat(true)
+    
+    // Keep scroll at top when sending message
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = 0
+    }
 
     try {
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/resources/chat`
