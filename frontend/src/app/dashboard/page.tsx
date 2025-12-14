@@ -243,18 +243,18 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }} 
           animate={{ opacity: 1, y: 0 }} 
           transition={{ delay: 0.1 }}
-          className="mb-8 p-6 rounded-2xl"
+          className="mb-8 p-4 sm:p-6 rounded-2xl"
           style={{ 
             background: isDark ? 'rgba(20,20,25,0.8)' : 'rgba(255,255,255,0.9)', 
             border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` 
           }}
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div>
-              <h2 className="text-lg font-bold" style={{ color: isDark ? '#fff' : '#000' }}>
+              <h2 className="text-base sm:text-lg font-bold" style={{ color: isDark ? '#fff' : '#000' }}>
                 {hasRoadmap ? currentRoadmap.skill?.name || 'Your Learning Path' : 'Starter Concepts'}
               </h2>
-              <p className="text-sm" style={{ color: isDark ? '#888' : '#666' }}>
+              <p className="text-xs sm:text-sm" style={{ color: isDark ? '#888' : '#666' }}>
                 {completedCount} of {learningConcepts.length} completed
               </p>
             </div>
@@ -263,7 +263,7 @@ export default function DashboardPage() {
                 <motion.button 
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium w-full sm:w-auto justify-center"
                   style={{ background: 'rgba(0,255,224,0.15)', color: '#00FFE0', border: '1px solid rgba(0,255,224,0.3)' }}
                 >
                   <Target className="w-4 h-4" />
@@ -288,12 +288,12 @@ export default function DashboardPage() {
 
         {/* Learning Concepts Grid */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold" style={{ color: isDark ? '#fff' : '#000' }}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <h2 className="text-lg sm:text-xl font-bold" style={{ color: isDark ? '#fff' : '#000' }}>
               {hasRoadmap ? 'Topics to Learn' : '10 Essential Concepts'}
             </h2>
-            <p className="text-sm" style={{ color: muted }}>
-              💡 Click to complete • 🔓 Unlocks next concept
+            <p className="text-xs sm:text-sm" style={{ color: muted }}>
+              💡 Click to complete • 🔓 Unlocks next
             </p>
           </div>
           
@@ -328,7 +328,7 @@ export default function DashboardPage() {
                     scale: { duration: 0.2 }
                   }}
                   whileHover={!isLocked ? { scale: 1.02 } : {}}
-                  className={`flex items-center gap-4 p-4 rounded-xl transition-all ${
+                  className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl transition-all ${
                     isLocked 
                       ? 'opacity-50 cursor-not-allowed' 
                       : 'cursor-pointer hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]'
@@ -349,7 +349,7 @@ export default function DashboardPage() {
                 >
                   {/* Number/Status */}
                   <div 
-                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                     style={{ 
                       background: isCompleted 
                         ? 'rgba(0,247,113,0.2)' 
@@ -360,39 +360,40 @@ export default function DashboardPage() {
                     }}
                   >
                     {isCompleted ? (
-                      <CheckCircle2 className="w-5 h-5" style={{ color: '#00F771' }} />
+                      <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: '#00F771' }} />
                     ) : isLocked ? (
-                      <Lock className="w-4 h-4" style={{ color: isDark ? '#666' : '#888' }} />
+                      <Lock className="w-3 h-3 sm:w-4 sm:h-4" style={{ color: isDark ? '#666' : '#888' }} />
                     ) : (
-                      <span className="text-sm font-bold" style={{ color: '#00FFE0' }}>{i + 1}</span>
+                      <span className="text-xs sm:text-sm font-bold" style={{ color: '#00FFE0' }}>{i + 1}</span>
                     )}
                   </div>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <h3 className={`font-semibold text-sm ${isCompleted ? 'line-through opacity-70' : ''}`} 
+                    <h3 className={`font-semibold text-xs sm:text-sm ${isCompleted ? 'line-through opacity-70' : ''}`} 
                       style={{ color: isDark ? '#fff' : '#000' }}
                     >
                       {concept.title}
                     </h3>
-                    <p className="text-xs truncate" style={{ color: isDark ? '#666' : '#888' }}>
+                    <p className="text-xs truncate hidden sm:block" style={{ color: isDark ? '#666' : '#888' }}>
                       {concept.desc}
                     </p>
                   </div>
 
                   {/* Meta */}
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className="text-xs px-2 py-1 rounded-lg" 
+                  <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3 flex-shrink-0">
+                    <span className="text-xs px-2 py-1 rounded-lg hidden sm:block" 
                       style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', color: isDark ? '#888' : '#666' }}
                     >
                       {concept.category}
                     </span>
                     <div className="flex items-center gap-1 text-xs" style={{ color: isDark ? '#666' : '#888' }}>
                       <Clock className="w-3 h-3" />
-                      {concept.duration}
+                      <span className="hidden sm:inline">{concept.duration}</span>
+                      <span className="sm:hidden">{concept.duration.split(' ')[0]}w</span>
                     </div>
                     {!isLocked && !isCompleted && (
-                      <ChevronRight className="w-4 h-4" style={{ color: isDark ? '#666' : '#888' }} />
+                      <ChevronRight className="w-4 h-4 hidden sm:block" style={{ color: isDark ? '#666' : '#888' }} />
                     )}
                   </div>
                 </motion.div>
@@ -408,8 +409,8 @@ export default function DashboardPage() {
           transition={{ delay: 0.3 }}
           className="mt-8"
         >
-          <h2 className="text-lg font-bold mb-4" style={{ color: isDark ? '#fff' : '#000' }}>Quick Actions</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <h2 className="text-base sm:text-lg font-bold mb-4" style={{ color: isDark ? '#fff' : '#000' }}>Quick Actions</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {[
               { icon: Target, label: 'Roadmaps', href: '/roadmaps', color: '#00F771' },
               { icon: Code2, label: 'Practice', href: '/practice', color: '#B794F6' },
@@ -419,18 +420,18 @@ export default function DashboardPage() {
               <Link key={action.label} href={action.href}>
                 <motion.div 
                   whileHover={{ y: -4 }} 
-                  className="p-4 rounded-xl text-center cursor-pointer"
+                  className="p-3 sm:p-4 rounded-xl text-center cursor-pointer"
                   style={{ 
                     background: isDark ? 'rgba(20,20,25,0.8)' : 'rgba(255,255,255,0.9)', 
                     border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` 
                   }}
                 >
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center mx-auto mb-2"
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center mx-auto mb-2"
                     style={{ background: `${action.color}15` }}
                   >
-                    <action.icon className="w-5 h-5" style={{ color: action.color }} />
+                    <action.icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: action.color }} />
                   </div>
-                  <span className="text-sm font-medium" style={{ color: isDark ? '#fff' : '#000' }}>{action.label}</span>
+                  <span className="text-xs sm:text-sm font-medium" style={{ color: isDark ? '#fff' : '#000' }}>{action.label}</span>
                 </motion.div>
               </Link>
             ))}
