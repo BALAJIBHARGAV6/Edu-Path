@@ -137,6 +137,31 @@ First milestone = "current", others = "locked". Be concise.`;
       updated_at: new Date().toISOString(),
     };
 
+    // Save roadmap to Supabase if user_id is provided
+    if (body.user_id) {
+      try {
+        const { data: savedRoadmap, error: saveError } = await supabaseAdmin
+          .from('roadmaps')
+          .insert({
+            user_id: body.user_id,
+            title: `${data.careerGoal} Learning Path`,
+            description: roadmapData.recommendedPath,
+            ai_generated_path: roadmapData,
+          })
+          .select()
+          .single();
+
+        if (!saveError && savedRoadmap) {
+          // Return the saved roadmap with actual database ID
+          roadmap.id = savedRoadmap.id;
+          roadmap.user_id = savedRoadmap.user_id;
+        }
+      } catch (saveErr) {
+        console.error('Error saving roadmap to database:', saveErr);
+        // Continue anyway - return generated roadmap even if save fails
+      }
+    }
+
     // Cache the result
     roadmapCache[cacheKey] = { data: roadmap, timestamp: Date.now() }
 

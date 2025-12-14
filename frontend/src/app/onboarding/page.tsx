@@ -8,6 +8,7 @@ import toast from 'react-hot-toast'
 import { useStore } from '@/lib/store'
 import { useAuth } from '@/context/AuthContext'
 import { useTheme } from '@/context/ThemeContext'
+import { supabase } from '@/lib/supabase'
 import PageWrapper from '@/components/PageWrapper'
 import Navbar from '@/components/Navbar'
 
@@ -20,7 +21,7 @@ export default function OnboardingPage() {
   const { user, loading: authLoading } = useAuth()
   const { theme } = useTheme()
   const isDark = theme === 'dark'
-  const { onboardingStep, setOnboardingStep, onboardingData, updateOnboardingData, setLoading, isLoading } = useStore()
+  const { onboardingStep, setOnboardingStep, onboardingData, updateOnboardingData, setLoading, isLoading, setCurrentRoadmap } = useStore()
   const [step, setStep] = useState(1)
 
   const bg = isDark ? '#09090B' : '#FFFFFF'
@@ -50,19 +51,30 @@ export default function OnboardingPage() {
   const handleSubmit = async () => {
     setLoading(true)
     try {
+      // Get current user session
+      const { data: { session } } = await supabase.auth.getSession()
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/roadmap/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(onboardingData),
+        body: JSON.stringify({
+          ...onboardingData,
+          user_id: session?.user?.id, // Include user ID for saving to database
+        }),
       })
       const data = await response.json()
       if (data.success) {
+        // Save roadmap to store
+        if (data.roadmap) {
+          setCurrentRoadmap(data.roadmap)
+        }
         toast.success('Your personalized roadmap is ready!')
         router.push('/dashboard')
       } else {
         throw new Error(data.error)
       }
     } catch (error) {
+      console.error('Error generating roadmap:', error)
       toast.error('Failed to generate roadmap. Please try again.')
     } finally {
       setLoading(false)
