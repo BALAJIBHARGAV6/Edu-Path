@@ -1,20 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Link from 'next/link'
 import { 
   ArrowRight, Code2, Server, Smartphone, Palette, 
   Database, Globe, Shield, Sparkles, CheckCircle2,
   Clock, Users, TrendingUp, Star, Play, ChevronRight,
   Brain, Target, Zap, Award, Plus, Cpu, Cloud, 
   BarChart3, Gamepad2, Camera, Music, Briefcase, 
-  BookOpen, Wrench, PenTool, Layers, Monitor
+  BookOpen, Wrench, PenTool, Layers, Monitor, ChevronDown, Check
 } from 'lucide-react'
 import { useTheme } from '@/context/ThemeContext'
 import { useStore } from '@/lib/store'
 import { useAuth } from '@/context/AuthContext'
 import PageWrapper from '@/components/PageWrapper'
 import GradientText from '@/components/GradientText'
+import toast from 'react-hot-toast'
 
 // Comprehensive domains and stacks database
 const domains = [
@@ -290,6 +292,7 @@ const levelDetails = {
 export default function RoadmapsPage() {
   const { user } = useAuth()
   const { theme } = useTheme()
+  const { currentRoadmap } = useStore()
   const isDark = theme === 'dark'
   
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null)
@@ -301,6 +304,35 @@ export default function RoadmapsPage() {
   const [generating, setGenerating] = useState(false)
   const [generatedRoadmap, setGeneratedRoadmap] = useState<any>(null)
   const [showRoadmapView, setShowRoadmapView] = useState(false)
+  const [expandedConcepts, setExpandedConcepts] = useState<number[]>([])
+  const [completedConcepts, setCompletedConcepts] = useState<number[]>([])
+
+  // Scroll to top when roadmap view is shown
+  useEffect(() => {
+    if (showRoadmapView) {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }, [showRoadmapView])
+
+  const toggleConcept = (conceptId: number) => {
+    setExpandedConcepts(prev => 
+      prev.includes(conceptId) 
+        ? prev.filter(id => id !== conceptId)
+        : [...prev, conceptId]
+    )
+  }
+
+  const markConceptComplete = (conceptId: number) => {
+    setCompletedConcepts(prev => {
+      if (prev.includes(conceptId)) {
+        toast.success('Concept unmarked')
+        return prev.filter(id => id !== conceptId)
+      } else {
+        toast.success('✅ Concept completed!')
+        return [...prev, conceptId]
+      }
+    })
+  }
 
   const bg = isDark ? '#09090B' : '#FFFFFF'
   const text = isDark ? '#FAFAFA' : '#09090B'
@@ -438,10 +470,15 @@ export default function RoadmapsPage() {
               <div className="mb-8 p-4 rounded-2xl" style={{ background: accent + '10', border: '1px solid ' + accent + '30' }}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium" style={{ color: accent }}>Learning Progress</span>
-                  <span className="text-sm" style={{ color: muted }}>0 of {generatedRoadmap.concepts.length} concepts completed</span>
+                  <span className="text-sm" style={{ color: muted }}>{completedConcepts.length} of {generatedRoadmap.concepts.length} concepts completed</span>
                 </div>
                 <div className="h-2 rounded-full" style={{ background: muted + '30' }}>
-                  <div className="h-full rounded-full" style={{ width: '0%', background: accent }} />
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(completedConcepts.length / generatedRoadmap.concepts.length) * 100}%` }}
+                    className="h-full rounded-full transition-all duration-500" 
+                    style={{ background: accent }} 
+                  />
                 </div>
               </div>
 
@@ -457,6 +494,8 @@ export default function RoadmapsPage() {
                     'Advanced': '#EF4444',
                     'Projects': '#8B5CF6'
                   }
+                  const isExpanded = expandedConcepts.includes(concept.id)
+                  const isCompleted = completedConcepts.includes(concept.id)
                   
                   return (
                     <motion.div
@@ -464,51 +503,139 @@ export default function RoadmapsPage() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.05 * i }}
-                      className="flex items-center gap-4 p-4 rounded-xl transition-all hover:scale-[1.01] cursor-pointer"
+                      className="rounded-xl overflow-hidden"
                       style={{
                         background: subtle,
                         border: '1px solid ' + border
                       }}
                     >
-                      {/* Number */}
-                      <div 
-                        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 font-bold"
-                        style={{ 
-                          background: (categoryColors[concept.category] || accent) + '20',
-                          color: categoryColors[concept.category] || accent
-                        }}
-                      >
-                        {i + 1}
-                      </div>
-                      
-                      {/* Content */}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-sm" style={{ color: text }}>
-                            {concept.name}
-                          </h3>
-                          <span 
-                            className="px-2 py-0.5 rounded text-xs font-medium"
-                            style={{
-                              background: (categoryColors[concept.category] || accent) + '15',
-                              color: categoryColors[concept.category] || accent
+                      {/* Concept Header */}
+                      <div className="flex items-center gap-4 p-4">
+                        <button 
+                          onClick={() => toggleConcept(concept.id)}
+                          className="flex items-center gap-4 flex-1 text-left hover:opacity-80 transition-opacity"
+                        >
+                          {/* Number */}
+                          <div 
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 font-bold ${isCompleted ? 'bg-emerald-500' : ''}`}
+                            style={{ 
+                              background: isCompleted ? '#10B981' : (categoryColors[concept.category] || accent) + '20',
+                              color: isCompleted ? '#fff' : categoryColors[concept.category] || accent
                             }}
                           >
-                            {concept.category}
-                          </span>
-                        </div>
-                        <p className="text-xs" style={{ color: muted }}>
-                          {concept.description}
-                        </p>
+                            {isCompleted ? <Check className="w-5 h-5" /> : i + 1}
+                          </div>
+                          
+                          {/* Content */}
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className={`font-semibold text-sm ${isCompleted ? 'line-through opacity-60' : ''}`} style={{ color: text }}>
+                                {concept.name}
+                              </h3>
+                              <span 
+                                className="px-2 py-0.5 rounded text-xs font-medium"
+                                style={{
+                                  background: (categoryColors[concept.category] || accent) + '15',
+                                  color: categoryColors[concept.category] || accent
+                                }}
+                              >
+                                {concept.category}
+                              </span>
+                            </div>
+                            <p className="text-xs" style={{ color: muted }}>
+                              {concept.description}
+                            </p>
+                          </div>
+                          
+                          {/* Expand Icon */}
+                          {isExpanded ? (
+                            <ChevronDown className="w-5 h-5 flex-shrink-0" style={{ color: muted }} />
+                          ) : (
+                            <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: muted }} />
+                          )}
+                        </button>
+                        
+                        {/* Complete Button */}
+                        <button
+                          onClick={() => markConceptComplete(concept.id)}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex-shrink-0 ${
+                            isCompleted
+                              ? 'bg-emerald-500 text-white hover:bg-emerald-600'
+                              : 'text-white hover:opacity-90'
+                          }`}
+                          style={{ background: isCompleted ? '#10B981' : accent }}
+                        >
+                          {isCompleted ? (
+                            <span className="flex items-center gap-1">
+                              <CheckCircle2 className="w-4 h-4" /> Done
+                            </span>
+                          ) : (
+                            'Complete'
+                          )}
+                        </button>
                       </div>
                       
-                      {/* Status */}
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 
-                          className="w-5 h-5" 
-                          style={{ color: concept.isCompleted ? '#10B981' : muted }} 
-                        />
-                      </div>
+                      {/* Expanded Details */}
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="p-4 pt-0 space-y-4" style={{ borderTop: '1px solid ' + border }}>
+                              <div className="pt-4">
+                                <h4 className="text-sm font-semibold mb-2" style={{ color: text }}>📖 What you'll learn:</h4>
+                                <p className="text-sm" style={{ color: muted }}>{concept.description}</p>
+                              </div>
+                              
+                              <div className="flex items-center gap-2 text-sm">
+                                <Clock className="w-4 h-4" style={{ color: muted }} />
+                                <span style={{ color: muted }}>Estimated time: 2-4 hours</span>
+                              </div>
+                              
+                              <div>
+                                <h4 className="text-sm font-semibold mb-2" style={{ color: text }}>📚 Resources:</h4>
+                                <ul className="space-y-1 text-sm" style={{ color: muted }}>
+                                  <li className="flex items-start gap-2">
+                                    <span style={{ color: accent }}>•</span>
+                                    <span>Official documentation and tutorials</span>
+                                  </li>
+                                  <li className="flex items-start gap-2">
+                                    <span style={{ color: accent }}>•</span>
+                                    <span>Video courses and walkthroughs</span>
+                                  </li>
+                                  <li className="flex items-start gap-2">
+                                    <span style={{ color: accent }}>•</span>
+                                    <span>Practice exercises and challenges</span>
+                                  </li>
+                                </ul>
+                              </div>
+                              
+                              <div className="flex items-center gap-3 pt-2">
+                                <Link 
+                                  href={`/learn/${concept.id}`}
+                                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-all hover:opacity-90"
+                                  style={{ background: accent }}
+                                >
+                                  <Play className="w-4 h-4" />
+                                  Start Learning
+                                </Link>
+                                <Link
+                                  href={`/resources?topic=${encodeURIComponent(concept.name)}`}
+                                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                                  style={{ background: border, color: text }}
+                                >
+                                  <BookOpen className="w-4 h-4" />
+                                  Get Notes
+                                </Link>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </motion.div>
                   )
                 })}
