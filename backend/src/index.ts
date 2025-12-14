@@ -38,8 +38,9 @@ app.use(express.json());
 app.get('/', (req, res) => {
   res.json({ 
     message: 'EduPath API Server', 
+    version: '1.1.0',
     status: 'running',
-    endpoints: ['/health', '/api/roadmap', '/api/videos', '/api/users', '/api/progress', '/api/notes', '/api/practice', '/api/resources']
+    endpoints: ['/health', '/api/roadmap', '/api/videos', '/api/users', '/api/progress', '/api/notes', '/api/practice', '/api/resources', '/api/resources/chat']
   });
 });
 
