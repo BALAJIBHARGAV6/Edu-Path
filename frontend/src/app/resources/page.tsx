@@ -3,9 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
-  Send, Sparkles, Bot, User, Loader2, Copy, Check, 
-  Trash2, MessageSquare, BookOpen, Lightbulb, Code2,
-  RefreshCw, ArrowDown
+  FileText, Sparkles, Search, Download, RefreshCw, BookOpen, Loader2, 
+  Copy, Check, Send, Bot, User, Trash2, MessageSquare, ArrowDown
 } from 'lucide-react'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
@@ -14,6 +13,8 @@ import PageWrapper from '@/components/PageWrapper'
 import GradientText from '@/components/GradientText'
 import toast from 'react-hot-toast'
 
+const PRIMARY = '#3B82F6'
+
 interface Message {
   id: string
   role: 'user' | 'assistant'
@@ -21,46 +22,112 @@ interface Message {
   timestamp: Date
 }
 
-const suggestedQuestions = [
-  { icon: Code2, text: "Explain async/await in JavaScript", category: "Programming" },
-  { icon: BookOpen, text: "What are React hooks and how do they work?", category: "React" },
-  { icon: Lightbulb, text: "Best practices for API design", category: "Backend" },
-  { icon: MessageSquare, text: "How to optimize database queries?", category: "Database" },
-]
-
 export default function ResourcesPage() {
   const { theme } = useTheme()
   const { user } = useAuth()
   const { currentRoadmap } = useStore()
   const isDark = theme === 'dark'
   
+  const [search, setSearch] = useState('')
+  const [generating, setGenerating] = useState<number | null>(null)
+  const [generatedNotes, setGeneratedNotes] = useState<Record<number, string>>({})
+  const [selectedTopic, setSelectedTopic] = useState<any | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [topics, setTopics] = useState<any[]>([])
+  const [loadingTopics, setLoadingTopics] = useState(true)
+  
+  // Chat states
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingChat, setIsLoadingChat] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [showScrollButton, setShowScrollButton] = useState(false)
+  const [activeTab, setActiveTab] = useState<'notes' | 'chat'>('notes')
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
-  const bg = isDark ? '#09090B' : '#FFFFFF'
-  const text = isDark ? '#FAFAFA' : '#09090B'
-  const muted = isDark ? '#A1A1AA' : '#71717A'
-  const subtle = isDark ? '#18181B' : '#F4F4F5'
-  const border = isDark ? '#27272A' : '#E4E4E7'
-  const accent = '#3B82F6'
+  // Extract topics from user's roadmap
+  useEffect(() => {
+    if (currentRoadmap) {
+      const milestones = currentRoadmap.milestones || currentRoadmap.ai_generated_path?.milestones || []
+      const extractedTopics: any[] = []
+      
+      milestones.forEach((milestone: any, mIndex: number) => {
+        const milestoneTopics = milestone.topics || []
+        milestoneTopics.forEach((topic: any, tIndex: number) => {
+          extractedTopics.push({
+            id: mIndex * 100 + tIndex,
+            title: topic.name || topic.title,
+            category: milestone.title || 'General',
+            description: topic.description || ''
+          })
+        })
+      })
+      
+      setTopics(extractedTopics.slice(0, 20)) // Limit to 20 topics
+    }
+    setLoadingTopics(false)
+  }, [currentRoadmap])
 
-  // Auto scroll to bottom
+  const filteredTopics = topics.filter(t => 
+    t.title.toLowerCase().includes(search.toLowerCase()) ||
+    t.category.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const generateNotes = async (topic: any) => {
+    setGenerating(topic.id)
+    setSelectedTopic(topic)
+    setActiveTab('notes')
+    
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/resources/generate-notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          topic: topic.title,
+          level: 'intermediate',
+          format: 'detailed'
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.notes) {
+        setGeneratedNotes(prev => ({ ...prev, [topic.id]: data.notes }))
+        toast.success('Notes generated with AI!')
+      } else {
+        throw new Error('Failed to generate notes')
+      }
+    } catch (error) {
+      console.error('Error generating notes:', error)
+      toast.error('Failed to generate notes. Please try again.')
+    } finally {
+      setGenerating(null)
+    }
+  }
+
+  const copyNotes = () => {
+    if (selectedTopic && generatedNotes[selectedTopic.id]) {
+      navigator.clipboard.writeText(generatedNotes[selectedTopic.id])
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+      toast.success('Copied to clipboard!')
+    }
+  }
+
+  // Chat functions
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    if (activeTab === 'chat') {
+      scrollToBottom()
+    }
+  }, [messages, activeTab])
 
-  // Handle scroll visibility for scroll button
   const handleScroll = () => {
     if (chatContainerRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current
@@ -68,7 +135,6 @@ export default function ResourcesPage() {
     }
   }
 
-  // Auto-resize textarea
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value)
     e.target.style.height = 'auto'
@@ -88,7 +154,7 @@ export default function ResourcesPage() {
   }
 
   const sendMessage = async (content: string = input.trim()) => {
-    if (!content || isLoading) return
+    if (!content || isLoadingChat) return
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -102,7 +168,7 @@ export default function ResourcesPage() {
     if (inputRef.current) {
       inputRef.current.style.height = 'auto'
     }
-    setIsLoading(true)
+    setIsLoadingChat(true)
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/resources/chat`, {
@@ -135,7 +201,7 @@ export default function ResourcesPage() {
       setMessages(prev => [...prev, errorMessage])
       toast.error('Failed to get response')
     } finally {
-      setIsLoading(false)
+      setIsLoadingChat(false)
     }
   }
 
@@ -146,275 +212,444 @@ export default function ResourcesPage() {
     }
   }
 
+  const bg = isDark ? '#09090B' : '#FFFFFF'
+  const text = isDark ? '#FAFAFA' : '#09090B'
+  const muted = isDark ? '#A1A1AA' : '#71717A'
+  const subtle = isDark ? '#18181B' : '#F4F4F5'
+  const border = isDark ? '#27272A' : '#E4E4E7'
+  const accent = '#2563EB'
+
+  // Show message if no roadmap
+  if (!currentRoadmap && !loadingTopics) {
+    return (
+      <PageWrapper>
+        <div className="min-h-screen pt-16 sm:pt-20 md:pt-24 flex items-center justify-center" style={{ background: isDark ? '#0A0A0F' : '#F8FFFE' }}>
+          <div className="text-center max-w-lg px-4">
+            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+              className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg mx-auto"
+            >
+              <FileText className="w-12 h-12 text-white" />
+            </motion.div>
+            <h2 className="text-2xl font-bold mb-3" style={{ color: text }}>Generate Your Roadmap First</h2>
+            <p className="text-base mb-6" style={{ color: muted }}>
+              Create a personalized roadmap to get AI-powered study notes for your learning topics.
+            </p>
+            <a href="/roadmaps" className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium hover:scale-105 transition-transform">
+              <Sparkles className="w-5 h-5" />
+              Generate Roadmap
+            </a>
+          </div>
+        </div>
+      </PageWrapper>
+    )
+  }
+
   return (
     <PageWrapper>
-      <div className="min-h-screen pt-16 sm:pt-20" style={{ background: isDark ? '#0A0A0F' : '#F8FFFE' }}>
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-80px)] flex flex-col">
-          
-          {/* Header */}
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            className="text-center mb-6"
-          >
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-                <Bot className="w-6 h-6 text-white" />
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: text }}>
-                AI <GradientText>Learning Assistant</GradientText>
-              </h1>
-            </div>
-            <p className="text-sm" style={{ color: muted }}>
-              Ask any programming question and get instant, detailed answers
-            </p>
-          </motion.div>
-
-          {/* Chat Container */}
-          <div 
-            ref={chatContainerRef}
-            onScroll={handleScroll}
-            className="flex-1 overflow-y-auto rounded-2xl mb-4 relative"
-            style={{ 
-              background: subtle,
-              border: `1px solid ${border}`
-            }}
-          >
-            {messages.length === 0 ? (
-              /* Welcome State */
-              <div className="h-full flex flex-col items-center justify-center p-6">
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="text-center max-w-lg"
-                >
-                  <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mx-auto mb-6 shadow-xl">
-                    <Sparkles className="w-10 h-10 text-white" />
-                  </div>
-                  <h2 className="text-xl font-bold mb-2" style={{ color: text }}>
-                    How can I help you today?
-                  </h2>
-                  <p className="text-sm mb-8" style={{ color: muted }}>
-                    I can explain concepts, debug code, suggest best practices, and help you learn faster.
-                  </p>
-
-                  {/* Suggested Questions */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {suggestedQuestions.map((q, i) => (
-                      <motion.button
-                        key={i}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 * i }}
-                        onClick={() => sendMessage(q.text)}
-                        className="flex items-center gap-3 p-4 rounded-xl text-left transition-all hover:scale-[1.02] group"
-                        style={{ 
-                          background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
-                          border: `1px solid ${border}`
-                        }}
-                      >
-                        <div 
-                          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform"
-                          style={{ background: `${accent}20` }}
-                        >
-                          <q.icon className="w-5 h-5" style={{ color: accent }} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate" style={{ color: text }}>{q.text}</p>
-                          <p className="text-xs" style={{ color: muted }}>{q.category}</p>
-                        </div>
-                      </motion.button>
-                    ))}
-                  </div>
-                </motion.div>
-              </div>
-            ) : (
-              /* Messages */
-              <div className="p-4 space-y-4">
-                <AnimatePresence>
-                  {messages.map((message, i) => (
-                    <motion.div
-                      key={message.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      {message.role === 'assistant' && (
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-md">
-                          <Bot className="w-4 h-4 text-white" />
-                        </div>
-                      )}
-                      
-                      <div 
-                        className={`max-w-[80%] rounded-2xl px-4 py-3 relative group ${
-                          message.role === 'user' 
-                            ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' 
-                            : ''
-                        }`}
-                        style={message.role === 'assistant' ? { 
-                          background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
-                          border: `1px solid ${border}`
-                        } : {}}
-                      >
-                        <div 
-                          className="text-sm leading-relaxed whitespace-pre-wrap"
-                          style={{ color: message.role === 'user' ? '#fff' : text }}
-                        >
-                          {message.content}
-                        </div>
-                        
-                        {message.role === 'assistant' && (
-                          <div className="flex items-center gap-2 mt-3 pt-2 border-t opacity-0 group-hover:opacity-100 transition-opacity"
-                            style={{ borderColor: border }}
-                          >
-                            <button
-                              onClick={() => copyToClipboard(message.id, message.content)}
-                              className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                            >
-                              {copiedId === message.id ? (
-                                <Check className="w-4 h-4 text-green-500" />
-                              ) : (
-                                <Copy className="w-4 h-4" style={{ color: muted }} />
-                              )}
-                            </button>
-                            <button
-                              onClick={() => sendMessage(`Explain more about: ${message.content.slice(0, 50)}...`)}
-                              className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                            >
-                              <RefreshCw className="w-4 h-4" style={{ color: muted }} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      {message.role === 'user' && (
-                        <div 
-                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md"
-                          style={{ background: accent }}
-                        >
-                          <User className="w-4 h-4 text-white" />
-                        </div>
-                      )}
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-
-                {/* Loading indicator */}
-                {isLoading && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex gap-3"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-md">
-                      <Bot className="w-4 h-4 text-white" />
-                    </div>
-                    <div 
-                      className="rounded-2xl px-4 py-3"
-                      style={{ 
-                        background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
-                        border: `1px solid ${border}`
-                      }}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="flex gap-1">
-                          {[0, 1, 2].map((i) => (
-                            <motion.div
-                              key={i}
-                              className="w-2 h-2 rounded-full"
-                              style={{ background: accent }}
-                              animate={{ y: [0, -6, 0] }}
-                              transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
-                            />
-                          ))}
-                        </div>
-                        <span className="text-sm" style={{ color: muted }}>Thinking...</span>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                <div ref={messagesEndRef} />
-              </div>
-            )}
-
-            {/* Scroll to bottom button */}
-            <AnimatePresence>
-              {showScrollButton && (
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  onClick={scrollToBottom}
-                  className="absolute bottom-4 right-4 w-10 h-10 rounded-full shadow-lg flex items-center justify-center"
-                  style={{ background: accent }}
-                >
-                  <ArrowDown className="w-5 h-5 text-white" />
-                </motion.button>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Input Area */}
+      <div className="min-h-screen pt-16 sm:pt-20 md:pt-24" style={{ background: isDark ? '#0A0A0F' : '#F8FFFE' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Hero Section */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl p-3 flex items-end gap-3"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-6"
             style={{ 
-              background: subtle,
-              border: `1px solid ${border}`
+              background: 'rgba(37,99,235,0.1)',
+              border: '1px solid rgba(37,99,235,0.2)'
             }}
           >
-            {messages.length > 0 && (
-              <button
-                onClick={clearChat}
-                className="p-3 rounded-xl hover:bg-red-500/10 transition-colors flex-shrink-0"
-                title="Clear chat"
-              >
-                <Trash2 className="w-5 h-5 text-red-500" />
-              </button>
-            )}
-            
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask anything about programming, concepts, debugging..."
-              rows={1}
-              className="flex-1 resize-none outline-none text-sm py-3 px-4 rounded-xl"
-              style={{ 
-                background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
-                color: text,
-                maxHeight: '150px'
-              }}
-            />
-            
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => sendMessage()}
-              disabled={!input.trim() || isLoading}
-              className="p-3 rounded-xl flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ 
-                background: input.trim() && !isLoading 
-                  ? 'linear-gradient(135deg, #3B82F6, #8B5CF6)' 
-                  : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')
-              }}
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 text-white animate-spin" />
-              ) : (
-                <Send className="w-5 h-5 text-white" />
-              )}
-            </motion.button>
+            <Sparkles className="w-4 h-4" style={{ color: accent }} />
+            <span className="text-sm font-medium" style={{ color: accent }}>AI-Powered Study Resources</span>
           </motion.div>
-
-          {/* Footer hint */}
-          <p className="text-center text-xs mt-3" style={{ color: muted }}>
-            Press <kbd className="px-1.5 py-0.5 rounded text-xs" style={{ background: border }}>Enter</kbd> to send, <kbd className="px-1.5 py-0.5 rounded text-xs" style={{ background: border }}>Shift + Enter</kbd> for new line
+          
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6" style={{ color: text }}>
+            Master concepts with <GradientText>smart resources</GradientText>
+          </h1>
+          
+          <p className="text-lg sm:text-xl leading-relaxed max-w-3xl mx-auto mb-8" style={{ color: muted }}>
+            Generate AI-powered study notes for topics in your learning path or chat with our AI assistant for instant help.
           </p>
+        </motion.div>
+
+        {/* Topics Count Banner */}
+        {topics.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+            className="mb-8 p-4 sm:p-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl text-white shadow-lg"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-sm sm:text-base">Your Learning Topics</h3>
+                <p className="text-blue-100 text-xs sm:text-sm">
+                  {topics.length} topics from your roadmap ready for AI notes
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        <div className="grid lg:grid-cols-4 gap-8">
+          {/* Topics Sidebar */}
+          <div className="lg:col-span-1">
+            {/* Search */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mb-6">
+              <div className="relative group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors group-focus-within:text-blue-500" style={{ color: muted }} />
+                <input
+                  type="text"
+                  placeholder="Search topics..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl text-sm outline-none transition-all border-0 focus:ring-2 focus:ring-blue-500/30 focus:scale-[1.02]"
+                  style={{ 
+                    background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                    color: text
+                  }}
+                />
+              </div>
+            </motion.div>
+
+            {/* Topics List */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-1">
+              <h3 className="text-xs uppercase tracking-wider font-bold mb-3 opacity-60" style={{ color: text }}>Topics</h3>
+              {filteredTopics.map((topic, i) => (
+                <motion.button
+                  key={topic.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.03 * i }}
+                  onClick={() => generatedNotes[topic.id] ? (setSelectedTopic(topic), setActiveTab('notes')) : generateNotes(topic)}
+                  disabled={generating === topic.id}
+                  className="w-full group flex items-center gap-3 p-3 rounded-lg text-left transition-all hover:translate-x-1"
+                  style={{ 
+                    background: selectedTopic?.id === topic.id && activeTab === 'notes' ? 'linear-gradient(135deg, #3B82F6, #1D4ED8)' : 'transparent',
+                    color: selectedTopic?.id === topic.id && activeTab === 'notes' ? '#fff' : text
+                  }}
+                >
+                  <div 
+                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all" 
+                    style={{ 
+                      background: selectedTopic?.id === topic.id && activeTab === 'notes' ? 'rgba(255,255,255,0.2)' : (isDark ? 'rgba(59,130,246,0.1)' : 'rgba(59,130,246,0.08)'),
+                    }}
+                  >
+                    {generating === topic.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" style={{ color: selectedTopic?.id === topic.id && activeTab === 'notes' ? '#fff' : '#3B82F6' }} />
+                    ) : (
+                      <FileText className="w-4 h-4" style={{ color: selectedTopic?.id === topic.id && activeTab === 'notes' ? '#fff' : '#3B82F6' }} />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">
+                      {topic.title}
+                    </p>
+                    <p className="text-xs opacity-70">{topic.category}</p>
+                  </div>
+                  {generatedNotes[topic.id] && (
+                    <div className="w-2 h-2 rounded-full bg-green-400" />
+                  )}
+                </motion.button>
+              ))}
+            </motion.div>
+          </div>
+
+          {/* Main Content */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+            className="lg:col-span-3"
+          >
+            {/* Tab Switcher */}
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => setActiveTab('notes')}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all"
+                style={{
+                  background: activeTab === 'notes' ? accent : 'transparent',
+                  color: activeTab === 'notes' ? '#fff' : text,
+                  border: `1px solid ${activeTab === 'notes' ? accent : border}`
+                }}
+              >
+                <FileText className="w-4 h-4" />
+                Study Notes
+              </button>
+              <button
+                onClick={() => setActiveTab('chat')}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all"
+                style={{
+                  background: activeTab === 'chat' ? accent : 'transparent',
+                  color: activeTab === 'chat' ? '#fff' : text,
+                  border: `1px solid ${activeTab === 'chat' ? accent : border}`
+                }}
+              >
+                <MessageSquare className="w-4 h-4" />
+                AI Chat
+                {messages.length > 0 && (
+                  <span className="px-2 py-0.5 rounded-full text-xs bg-white/20">
+                    {messages.length}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Notes Tab */}
+            {activeTab === 'notes' && (
+              <>
+                {selectedTopic && generatedNotes[selectedTopic.id] ? (
+                  <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    {/* Header */}
+                    <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                            <FileText className="w-6 h-6 text-white" />
+                          </div>
+                          <div>
+                            <h2 className="text-xl font-bold text-white">{selectedTopic.title}</h2>
+                            <p className="text-blue-100 text-sm">AI-generated study notes</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <motion.button 
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={copyNotes} 
+                            className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-all backdrop-blur-sm"
+                          >
+                            {copied ? <Check className="w-4 h-4 text-green-300" /> : <Copy className="w-4 h-4 text-white" />}
+                          </motion.button>
+                          <motion.button 
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => generateNotes(selectedTopic)} 
+                            className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-all backdrop-blur-sm"
+                          >
+                            <RefreshCw className="w-4 h-4 text-white" />
+                          </motion.button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="p-4 sm:p-6 max-h-[500px] overflow-y-auto">
+                      <div className="prose prose-sm sm:prose prose-gray dark:prose-invert max-w-none">
+                        <div className="whitespace-pre-wrap font-sans text-xs sm:text-sm leading-relaxed" style={{ color: text }}>
+                          {generatedNotes[selectedTopic.id]}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 min-h-[400px] flex flex-col items-center justify-center text-center p-6 sm:p-8">
+                    <motion.div 
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 shadow-lg"
+                    >
+                      <FileText className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
+                    </motion.div>
+                    <h3 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3" style={{ color: text }}>Select a Topic</h3>
+                    <p className="text-sm sm:text-base max-w-md leading-relaxed opacity-70" style={{ color: muted }}>
+                      Choose any topic from your roadmap to generate AI-powered study notes instantly.
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Chat Tab */}
+            {activeTab === 'chat' && (
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 400px)', minHeight: '500px' }}>
+                {/* Chat Messages */}
+                <div 
+                  ref={chatContainerRef}
+                  onScroll={handleScroll}
+                  className="flex-1 overflow-y-auto p-4 relative"
+                >
+                  {messages.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-center">
+                      <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mb-6 shadow-xl">
+                        <Bot className="w-10 h-10 text-white" />
+                      </div>
+                      <h3 className="text-xl font-bold mb-2" style={{ color: text }}>
+                        Ask Me Anything!
+                      </h3>
+                      <p className="text-sm max-w-md" style={{ color: muted }}>
+                        I can help you understand concepts, debug code, and answer any programming questions.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <AnimatePresence>
+                        {messages.map((message) => (
+                          <motion.div
+                            key={message.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                          >
+                            {message.role === 'assistant' && (
+                              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-md">
+                                <Bot className="w-4 h-4 text-white" />
+                              </div>
+                            )}
+                            
+                            <div 
+                              className={`max-w-[80%] rounded-2xl px-4 py-3 relative group ${
+                                message.role === 'user' 
+                                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' 
+                                  : ''
+                              }`}
+                              style={message.role === 'assistant' ? { 
+                                background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+                                border: `1px solid ${border}`
+                              } : {}}
+                            >
+                              <div 
+                                className="text-sm leading-relaxed whitespace-pre-wrap"
+                                style={{ color: message.role === 'user' ? '#fff' : text }}
+                              >
+                                {message.content}
+                              </div>
+                              
+                              {message.role === 'assistant' && (
+                                <div className="flex items-center gap-2 mt-3 pt-2 border-t opacity-0 group-hover:opacity-100 transition-opacity"
+                                  style={{ borderColor: border }}
+                                >
+                                  <button
+                                    onClick={() => copyToClipboard(message.id, message.content)}
+                                    className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                                  >
+                                    {copiedId === message.id ? (
+                                      <Check className="w-4 h-4 text-green-500" />
+                                    ) : (
+                                      <Copy className="w-4 h-4" style={{ color: muted }} />
+                                    )}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            {message.role === 'user' && (
+                              <div 
+                                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md"
+                                style={{ background: accent }}
+                              >
+                                <User className="w-4 h-4 text-white" />
+                              </div>
+                            )}
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+
+                      {isLoadingChat && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="flex gap-3"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-md">
+                            <Bot className="w-4 h-4 text-white" />
+                          </div>
+                          <div 
+                            className="rounded-2xl px-4 py-3"
+                            style={{ 
+                              background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+                              border: `1px solid ${border}`
+                            }}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="flex gap-1">
+                                {[0, 1, 2].map((i) => (
+                                  <motion.div
+                                    key={i}
+                                    className="w-2 h-2 rounded-full"
+                                    style={{ background: accent }}
+                                    animate={{ y: [0, -6, 0] }}
+                                    transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-sm" style={{ color: muted }}>Thinking...</span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      <div ref={messagesEndRef} />
+                    </div>
+                  )}
+
+                  {showScrollButton && (
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      onClick={scrollToBottom}
+                      className="absolute bottom-4 right-4 w-10 h-10 rounded-full shadow-lg flex items-center justify-center"
+                      style={{ background: accent }}
+                    >
+                      <ArrowDown className="w-5 h-5 text-white" />
+                    </motion.button>
+                  )}
+                </div>
+
+                {/* Chat Input */}
+                <div className="p-3 border-t" style={{ borderColor: border }}>
+                  <div className="flex items-end gap-3">
+                    {messages.length > 0 && (
+                      <button
+                        onClick={clearChat}
+                        className="p-3 rounded-xl hover:bg-red-500/10 transition-colors flex-shrink-0"
+                        title="Clear chat"
+                      >
+                        <Trash2 className="w-5 h-5 text-red-500" />
+                      </button>
+                    )}
+                    
+                    <textarea
+                      ref={inputRef}
+                      value={input}
+                      onChange={handleInputChange}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Ask anything about programming..."
+                      rows={1}
+                      className="flex-1 resize-none outline-none text-sm py-3 px-4 rounded-xl"
+                      style={{ 
+                        background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                        color: text,
+                        maxHeight: '150px'
+                      }}
+                    />
+                    
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => sendMessage()}
+                      disabled={!input.trim() || isLoadingChat}
+                      className="p-3 rounded-xl flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ 
+                        background: input.trim() && !isLoadingChat 
+                          ? 'linear-gradient(135deg, #3B82F6, #8B5CF6)' 
+                          : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')
+                      }}
+                    >
+                      {isLoadingChat ? (
+                        <Loader2 className="w-5 h-5 text-white animate-spin" />
+                      ) : (
+                        <Send className="w-5 h-5 text-white" />
+                      )}
+                    </motion.button>
+                  </div>
+                  <p className="text-center text-xs mt-2" style={{ color: muted }}>
+                    Press <kbd className="px-1.5 py-0.5 rounded text-xs" style={{ background: border }}>Enter</kbd> to send
+                  </p>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </div>
         </div>
       </div>
     </PageWrapper>
