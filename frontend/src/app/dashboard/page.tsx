@@ -11,6 +11,7 @@ import {
 import { useStore } from '@/lib/store'
 import { useAuth } from '@/context/AuthContext'
 import { useTheme } from '@/context/ThemeContext'
+import { supabase } from '@/lib/supabase'
 import PageWrapper from '@/components/PageWrapper'
 import GradientText from '@/components/GradientText'
 import toast from 'react-hot-toast'
@@ -32,13 +33,49 @@ const starterConcepts = [
 export default function DashboardPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
-  const { currentRoadmap, onboardingData, userProgress, userSkills, markConceptComplete } = useStore()
+  const { currentRoadmap, onboardingData, userProgress, userSkills, markConceptComplete, setCurrentRoadmap } = useStore()
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const [loadingRoadmap, setLoadingRoadmap] = useState(true)
 
   useEffect(() => {
-    if (!authLoading && !user) router.push('/auth/login')
-  }, [authLoading, user, router])
+    if (!authLoading && !user) {
+      router.push('/auth/login')
+      return
+    }
+
+    // Load roadmap from Supabase if not in store
+    const loadRoadmap = async () => {
+      if (user && !currentRoadmap) {
+        try {
+          const { data: roadmap } = await supabase
+            .from('roadmaps')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+          
+          if (roadmap) {
+            setCurrentRoadmap(roadmap)
+          } else {
+            // No roadmap found, redirect to onboarding
+            router.push('/onboarding')
+          }
+        } catch (err) {
+          console.error('Error loading roadmap:', err)
+        } finally {
+          setLoadingRoadmap(false)
+        }
+      } else {
+        setLoadingRoadmap(false)
+      }
+    }
+
+    if (!authLoading) {
+      loadRoadmap()
+    }
+  }, [authLoading, user, currentRoadmap, router, setCurrentRoadmap])
 
   if (authLoading || !user) {
     return (

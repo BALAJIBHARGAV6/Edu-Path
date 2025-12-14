@@ -7,12 +7,15 @@ import { motion } from 'framer-motion'
 import { Mail, Lock, Loader2, ArrowRight, Sparkles, Github, Chrome, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useTheme } from '@/context/ThemeContext'
+import { useStore } from '@/lib/store'
+import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
   const router = useRouter()
   const { signIn } = useAuth()
   const { theme } = useTheme()
+  const { setCurrentRoadmap } = useStore()
   const isDark = theme === 'dark'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -36,7 +39,32 @@ export default function LoginPage() {
       return
     }
     toast.success('Welcome back!')
-    router.push('/onboarding')
+    
+    // Check if user has completed onboarding by fetching roadmap from Supabase
+    try {
+      const { data: session } = await supabase.auth.getSession()
+      if (session?.session?.user) {
+        const { data: roadmap } = await supabase
+          .from('roadmaps')
+          .select('*')
+          .eq('user_id', session.session.user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single()
+        
+        if (roadmap) {
+          setCurrentRoadmap(roadmap)
+          router.push('/dashboard')
+        } else {
+          router.push('/onboarding')
+        }
+      }
+    } catch (err) {
+      // No roadmap found, redirect to onboarding
+      router.push('/onboarding')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
