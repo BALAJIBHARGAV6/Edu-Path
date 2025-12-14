@@ -42,12 +42,12 @@ export default function LoginPage() {
     
     // Check if user has completed onboarding by fetching roadmap from Supabase
     try {
-      const { data: session } = await supabase.auth.getSession()
-      if (session?.session?.user) {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
         const { data: roadmaps, error } = await supabase
           .from('roadmaps')
           .select('*')
-          .eq('user_id', session.session.user.id)
+          .eq('user_id', session.user.id)
           .order('created_at', { ascending: false })
           .limit(1)
         
@@ -55,6 +55,7 @@ export default function LoginPage() {
           setCurrentRoadmap(roadmaps[0])
           router.push('/dashboard')
         } else {
+          console.log('No roadmap found or error:', error)
           router.push('/onboarding')
         }
       } else {
