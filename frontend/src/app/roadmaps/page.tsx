@@ -1021,11 +1021,11 @@ export default function RoadmapsPage() {
                     return (
                       <div key={level} className="flex items-center gap-2">
                         <div 
-                          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${isActive ? 'ring-4 ring-offset-2' : ''}`}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all`}
                           style={{ 
                             background: isActive || isPassed ? levelColors[level as keyof typeof levelColors] : muted + '30',
                             color: isActive || isPassed ? '#fff' : muted,
-                            ringColor: isActive ? levelColors[level as keyof typeof levelColors] + '50' : 'transparent'
+                            boxShadow: isActive ? `0 0 0 4px ${levelColors[level as keyof typeof levelColors]}20` : 'none'
                           }}
                         >
                           {isPassed ? <Check className="w-5 h-5" /> : idx + 1}
