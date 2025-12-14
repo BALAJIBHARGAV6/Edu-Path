@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { 
   FileText, Sparkles, Search, Download, RefreshCw,
@@ -15,38 +15,6 @@ import toast from 'react-hot-toast'
 
 const PRIMARY = '#3B82F6'
 
-// Topics organized by skill area
-const topicLibrary: Record<string, any[]> = {
-  'JavaScript': [
-    { id: 1, title: 'JavaScript Fundamentals', category: 'Basics' },
-    { id: 2, title: 'ES6+ Features', category: 'Modern JS' },
-    { id: 3, title: 'Async/Await & Promises', category: 'Async' },
-  ],
-  'React': [
-    { id: 4, title: 'React Hooks Deep Dive', category: 'Hooks' },
-    { id: 5, title: 'State Management', category: 'State' },
-    { id: 6, title: 'React Performance', category: 'Optimization' },
-  ],
-  'CSS': [
-    { id: 7, title: 'CSS Grid & Flexbox', category: 'Layout' },
-    { id: 8, title: 'Responsive Design', category: 'Mobile' },
-    { id: 9, title: 'CSS Animations', category: 'Animation' },
-  ],
-  'TypeScript': [
-    { id: 10, title: 'TypeScript Essentials', category: 'Basics' },
-    { id: 11, title: 'Advanced Types', category: 'Types' },
-  ],
-  'Node.js': [
-    { id: 12, title: 'Node.js Basics', category: 'Backend' },
-    { id: 13, title: 'REST API Design', category: 'APIs' },
-  ],
-  'General': [
-    { id: 14, title: 'Git Version Control', category: 'Tools' },
-    { id: 15, title: 'Clean Code Principles', category: 'Best Practices' },
-    { id: 16, title: 'Data Structures', category: 'CS Fundamentals' },
-  ]
-}
-
 export default function ResourcesPage() {
   const { theme } = useTheme()
   const { user } = useAuth()
@@ -57,97 +25,67 @@ export default function ResourcesPage() {
   const [generatedNotes, setGeneratedNotes] = useState<Record<number, string>>({})
   const [selectedTopic, setSelectedTopic] = useState<any | null>(null)
   const [copied, setCopied] = useState(false)
+  const [topics, setTopics] = useState<any[]>([])
+  const [loadingTopics, setLoadingTopics] = useState(true)
 
-  // Get user's learning topics from settings/profile
-  const userSkills = ['JavaScript', 'React', 'CSS'] // This should come from user settings
-  const roadmapTopics = userSkills
-
-  // Get relevant topics based on user skills
-  const getRecommendedTopics = () => {
-    let topics: any[] = []
-    
-    // Prioritize user's selected skills
-    if (userSkills.length > 0) {
-      userSkills.forEach(skill => {
-        if (topicLibrary[skill]) {
-          topics = [...topics, ...topicLibrary[skill]]
-        }
+  // Extract topics from user's roadmap
+  useEffect(() => {
+    if (currentRoadmap) {
+      const milestones = currentRoadmap.milestones || currentRoadmap.ai_generated_path?.milestones || []
+      const extractedTopics: any[] = []
+      
+      milestones.forEach((milestone: any, mIndex: number) => {
+        const milestoneTopics = milestone.topics || []
+        milestoneTopics.forEach((topic: any, tIndex: number) => {
+          extractedTopics.push({
+            id: mIndex * 100 + tIndex,
+            title: topic.name || topic.title,
+            category: milestone.title || 'General',
+            description: topic.description || ''
+          })
+        })
       })
+      
+      setTopics(extractedTopics.slice(0, 20)) // Limit to 20 topics
     }
-    
-    // Add general topics if we don't have enough
-    if (topics.length < 8) {
-      Object.values(topicLibrary).forEach(topicGroup => {
-        topics = [...topics, ...topicGroup]
-      })
-    }
-    
-    return Array.from(new Map(topics.map(t => [t.id, t])).values())
-  }
+    setLoadingTopics(false)
+  }, [currentRoadmap])
 
-  const allTopics = getRecommendedTopics()
-  const filteredTopics = allTopics.filter(t => t.title.toLowerCase().includes(search.toLowerCase()))
+  const filteredTopics = topics.filter(t => 
+    t.title.toLowerCase().includes(search.toLowerCase()) ||
+    t.category.toLowerCase().includes(search.toLowerCase())
+  )
 
   const generateNotes = async (topic: any) => {
     setGenerating(topic.id)
     setSelectedTopic(topic)
     
-    await new Promise(r => setTimeout(r, 2000))
-    
-    const notes = `# ${topic.title} - Complete Study Guide
-
-## 📚 Overview
-${topic.title} is a crucial technology in modern development that every developer should master. This comprehensive guide covers everything from basic concepts to advanced implementation patterns.
-
-## 🎯 Why Learn ${topic.title}?
-- **High Demand**: Companies worldwide seek skilled ${topic.title} developers
-- **Versatility**: Used across frontend, backend, and mobile development
-- **Career Growth**: Opens doors to senior positions and higher salaries
-- **Future-Proof**: Continuously evolving with modern trends
-
-## 🔧 Core Concepts
-
-### 1. Fundamentals
-Understanding the basic principles and architecture patterns that make ${topic.title} powerful and efficient.
-
-### 2. Component Architecture
-Everything is built as reusable, modular components that can be composed together.
-
-### 3. State Management
-Centralized state handling for complex applications with predictable data flow.
-
-## 💻 Code Examples
-
-### Basic Implementation
-\`\`\`javascript
-// Example ${topic.title} component
-import React, { useState, useEffect } from 'react';
-
-const ExampleComponent = ({ data }) => {
-  const [state, setState] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Fetch data or perform side effects
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const result = await fetch('/api/data');
-        const json = await result.json();
-        setState(json);
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        setLoading(false);
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/resources/generate-notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          topic: topic.title,
+          level: 'intermediate',
+          format: 'detailed'
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.notes) {
+        setGeneratedNotes(prev => ({ ...prev, [topic.id]: data.notes }))
+        toast.success('Notes generated with AI!')
+      } else {
+        throw new Error('Failed to generate notes')
       }
-    };
-
-    fetchData();
-  }, []);
-
-  if (loading) return <div>Loading...</div>;
-
-  return (
+    } catch (error) {
+      console.error('Error generating notes:', error)
+      toast.error('Failed to generate notes. Please try again.')
+    } finally {
+      setGenerating(null)
+    }
+  }
     <div className="example-component">
       <h2>{data.title}</h2>
       <p>{data.description}</p>
@@ -390,7 +328,7 @@ test('handles user interaction', async () => {
       navigator.clipboard.writeText(generatedNotes[selectedTopic.id])
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-      toast.success('Copied!')
+      toast.success('Copied to clipboard!')
     }
   }
 
@@ -400,6 +338,31 @@ test('handles user interaction', async () => {
   const subtle = isDark ? '#18181B' : '#F4F4F5'
   const border = isDark ? '#27272A' : '#E4E4E7'
   const accent = '#2563EB'
+
+  // Show message if no roadmap
+  if (!currentRoadmap && !loadingTopics) {
+    return (
+      <PageWrapper>
+        <div className="min-h-screen pt-16 sm:pt-20 md:pt-24 flex items-center justify-center" style={{ background: isDark ? '#0A0A0F' : '#F8FFFE' }}>
+          <div className="text-center max-w-lg px-4">
+            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+              className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg mx-auto"
+            >
+              <FileText className="w-12 h-12 text-white" />
+            </motion.div>
+            <h2 className="text-2xl font-bold mb-3" style={{ color: text }}>Generate Your Roadmap First</h2>
+            <p className="text-base mb-6" style={{ color: muted }}>
+              Create a personalized roadmap to get AI-powered study notes for your learning topics.
+            </p>
+            <a href="/roadmaps" className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium hover:scale-105 transition-transform">
+              <Sparkles className="w-5 h-5" />
+              Generate Roadmap
+            </a>
+          </div>
+        </div>
+      </PageWrapper>
+    )
+  }
 
   return (
     <PageWrapper>
@@ -426,23 +389,23 @@ test('handles user interaction', async () => {
           </h1>
           
           <p className="text-lg sm:text-xl leading-relaxed max-w-3xl mx-auto mb-8" style={{ color: muted }}>
-            Generate AI-powered study notes for any topic. Get personalized explanations, examples, and practice materials tailored to your learning style.
+            Generate AI-powered study notes for topics in your learning path. Get comprehensive explanations, examples, and best practices.
           </p>
         </motion.div>
 
-        {/* Personalized Banner */}
-        {roadmapTopics.length > 0 && (
+        {/* Topics Count Banner */}
+        {topics.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className="mb-8 p-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl text-white shadow-lg"
+            className="mb-8 p-4 sm:p-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl text-white shadow-lg"
           >
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                <Sparkles className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
               <div>
-                <h3 className="font-bold text-white">Personalized Topics</h3>
-                <p className="text-blue-100 text-sm">
-                  Curated for: <strong className="text-white">{roadmapTopics.slice(0, 3).join(', ')}</strong>
+                <h3 className="font-bold text-white text-sm sm:text-base">Your Learning Topics</h3>
+                <p className="text-blue-100 text-xs sm:text-sm">
+                  {topics.length} topics from your roadmap ready for AI notes
                 </p>
               </div>
             </div>
@@ -560,26 +523,26 @@ test('handles user interaction', async () => {
                 </div>
                 
                 {/* Content */}
-                <div className="p-6 max-h-96 overflow-y-auto">
-                  <div className="prose prose-gray dark:prose-invert max-w-none">
-                    <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed bg-gray-50 dark:bg-gray-800 p-4 rounded-lg" style={{ color: text }}>
+                <div className="p-4 sm:p-6 max-h-[500px] overflow-y-auto">
+                  <div className="prose prose-sm sm:prose prose-gray dark:prose-invert max-w-none">
+                    <div className="whitespace-pre-wrap font-sans text-xs sm:text-sm leading-relaxed" style={{ color: text }}>
                       {generatedNotes[selectedTopic.id]}
-                    </pre>
+                    </div>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 h-96 flex flex-col items-center justify-center text-center p-8">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 min-h-[400px] flex flex-col items-center justify-center text-center p-6 sm:p-8">
                 <motion.div 
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg"
+                  className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 shadow-lg"
                 >
-                  <FileText className="w-12 h-12 text-white" />
+                  <FileText className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
                 </motion.div>
-                <h3 className="text-2xl font-bold mb-3" style={{ color: text }}>Select a Topic</h3>
-                <p className="text-base max-w-md leading-relaxed opacity-70" style={{ color: muted }}>
-                  Choose any topic from the sidebar to generate comprehensive AI-powered study notes instantly.
+                <h3 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3" style={{ color: text }}>Select a Topic</h3>
+                <p className="text-sm sm:text-base max-w-md leading-relaxed opacity-70" style={{ color: muted }}>
+                  Choose any topic from your roadmap to generate AI-powered study notes instantly.
                 </p>
               </div>
             )}
