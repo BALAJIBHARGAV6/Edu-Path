@@ -155,11 +155,14 @@ router.get('/saved/:userId', async (req: Request, res: Response) => {
 router.post('/chat', async (req: Request, res: Response) => {
   const { message, context = 'general programming' } = req.body
 
+  console.log('Chat request received:', { message: message?.substring(0, 50), context })
+
   if (!message) {
-    return res.status(400).json({ error: 'Message is required' })
+    return res.status(400).json({ error: 'Message is required', response: 'Please provide a message.' })
   }
 
   try {
+    console.log('Creating Groq completion...')
     const completion = await groq.chat.completions.create({
       messages: [
         {
@@ -194,13 +197,15 @@ The user is currently learning about: ${context}`
     })
 
     const response = completion.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response. Please try again."
+    console.log('Groq response received:', response.substring(0, 100))
     
-    res.json({ response })
-  } catch (error) {
-    console.error('Chat error:', error)
+    res.json({ response, success: true })
+  } catch (error: any) {
+    console.error('Chat error:', error.message || error)
     res.status(500).json({ 
       error: 'Failed to process message',
-      response: "I'm having trouble connecting right now. Please try again in a moment."
+      response: "I'm having trouble connecting to the AI service right now. Please try again in a moment.",
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     })
   }
 })

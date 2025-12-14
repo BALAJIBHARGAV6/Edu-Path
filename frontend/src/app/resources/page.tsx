@@ -171,7 +171,10 @@ export default function ResourcesPage() {
     setIsLoadingChat(true)
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/resources/chat`, {
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/resources/chat`
+      console.log('Sending request to:', apiUrl)
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -180,7 +183,14 @@ export default function ResourcesPage() {
         })
       })
 
+      console.log('Response status:', response.status)
+      
+      if (!response.ok) {
+        throw new Error(`API responded with status ${response.status}`)
+      }
+
       const data = await response.json()
+      console.log('Response data:', data)
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -190,16 +200,16 @@ export default function ResourcesPage() {
       }
 
       setMessages(prev => [...prev, assistantMessage])
-    } catch (error) {
-      console.error('Error:', error)
+    } catch (error: any) {
+      console.error('Chat error details:', error)
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "Sorry, I'm having trouble connecting right now. Please try again in a moment.",
+        content: `Sorry, I'm having trouble connecting right now. ${error.message || 'Please try again in a moment.'}`,
         timestamp: new Date()
       }
       setMessages(prev => [...prev, errorMessage])
-      toast.error('Failed to get response')
+      toast.error(`Connection error: ${error.message || 'Unknown error'}`)
     } finally {
       setIsLoadingChat(false)
     }
