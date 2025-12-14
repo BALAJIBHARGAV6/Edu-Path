@@ -190,7 +190,7 @@ export default function RoadmapDetailPage() {
           
           // Load progress from Supabase
           const { data: progressData } = await supabase
-            .from('user_progress')
+            .from('roadmap_progress')
             .select('completed_topics')
             .eq('user_id', user.id)
             .eq('roadmap_id', userRoadmap.id)
@@ -246,7 +246,7 @@ export default function RoadmapDetailPage() {
     // Save to Supabase
     try {
       const { error } = await supabase
-        .from('user_progress')
+        .from('roadmap_progress')
         .upsert({
           user_id: user.id,
           roadmap_id: roadmap.id,
