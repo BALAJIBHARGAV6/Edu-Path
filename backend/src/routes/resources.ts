@@ -151,4 +151,58 @@ router.get('/saved/:userId', async (req: Request, res: Response) => {
   res.json({ resources: [] })
 })
 
+// Chat endpoint for AI Learning Assistant
+router.post('/chat', async (req: Request, res: Response) => {
+  const { message, context = 'general programming' } = req.body
+
+  if (!message) {
+    return res.status(400).json({ error: 'Message is required' })
+  }
+
+  try {
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: `You are an expert programming tutor and AI learning assistant. You help students learn programming concepts, debug code, and understand best practices.
+
+Your expertise includes:
+- All programming languages (JavaScript, Python, Java, C++, etc.)
+- Web development (React, Node.js, databases, APIs)
+- Computer science fundamentals
+- Software engineering best practices
+- Debugging and problem-solving
+
+Guidelines:
+1. Be concise but thorough
+2. Use code examples when helpful
+3. Explain concepts step by step
+4. Provide practical tips and best practices
+5. If asked about code, explain what it does and suggest improvements
+6. Be encouraging and supportive
+
+The user is currently learning about: ${context}`
+        },
+        {
+          role: 'user',
+          content: message
+        }
+      ],
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.7,
+      max_tokens: 2000
+    })
+
+    const response = completion.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response. Please try again."
+    
+    res.json({ response })
+  } catch (error) {
+    console.error('Chat error:', error)
+    res.status(500).json({ 
+      error: 'Failed to process message',
+      response: "I'm having trouble connecting right now. Please try again in a moment."
+    })
+  }
+})
+
 export default router

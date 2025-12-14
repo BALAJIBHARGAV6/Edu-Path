@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { 
   CheckCircle2, Clock, Play, ChevronRight, BookOpen, Video, Code2, 
-  FileText, Target, ArrowRight, Sparkles, Lock, Circle
+  FileText, Target, Sparkles, Lock, TrendingUp, Flame, Trophy,
+  Calendar, Zap, Star, ArrowRight, BarChart3, MessageSquare
 } from 'lucide-react'
 import { useStore } from '@/lib/store'
 import { useAuth } from '@/context/AuthContext'
@@ -33,10 +34,12 @@ const starterConcepts = [
 export default function DashboardPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
-  const { currentRoadmap, onboardingData, userProgress, userSkills, markConceptComplete, setCurrentRoadmap } = useStore()
+  const { currentRoadmap, onboardingData, userProgress, markConceptComplete, setCurrentRoadmap } = useStore()
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const [loadingRoadmap, setLoadingRoadmap] = useState(true)
+  const [streak, setStreak] = useState(7)
+  const [totalXP, setTotalXP] = useState(1250)
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -58,7 +61,6 @@ export default function DashboardPage() {
           if (!error && roadmaps && roadmaps.length > 0) {
             setCurrentRoadmap(roadmaps[0])
           } else {
-            // No roadmap found, redirect to onboarding
             router.push('/onboarding')
           }
         } catch (err) {
@@ -80,7 +82,7 @@ export default function DashboardPage() {
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: isDark ? '#0A0A0F' : '#F8FFFE' }}>
-        <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#00F771', borderTopColor: 'transparent' }} />
+        <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#3B82F6', borderTopColor: 'transparent' }} />
       </div>
     )
   }
@@ -108,335 +110,415 @@ export default function DashboardPage() {
 
   const toggleConcept = (id: number) => {
     const wasCompleted = userProgress.completedConcepts.includes(id)
-    
-    // Update the global progress state
     markConceptComplete(id)
-    
-    // Find current concept index
     const currentIndex = learningConcepts.findIndex((c: any) => c.id === id)
     const nextConcept = learningConcepts[currentIndex + 1]
     
     if (!wasCompleted) {
-      // Concept was just completed
-      toast.success('Great job! Concept completed! 🎉✨')
+      setTotalXP(prev => prev + 50)
+      toast.success('🎉 +50 XP! Concept completed!')
       
-      // Check if there's a next concept to unlock
       if (nextConcept && currentIndex < learningConcepts.length - 1) {
         setTimeout(() => {
-          toast.success(`🔓 "${nextConcept.title}" unlocked! Keep going! 🚀`, {
-            duration: 4000,
-          })
-        }, 1000)
+          toast.success(`🔓 "${nextConcept.title}" unlocked!`, { duration: 3000 })
+        }, 800)
       } else if (currentIndex === learningConcepts.length - 1) {
-        // Last concept completed
         setTimeout(() => {
-          toast.success('🎊 Congratulations! All concepts completed! 🎊', {
-            duration: 5000,
-          })
-        }, 1000)
+          toast.success('🏆 All concepts completed! Amazing work!', { duration: 5000 })
+        }, 800)
       }
     } else {
-      // Concept was unmarked
-      toast.success('Concept unmarked! Keep learning! 📚')
+      setTotalXP(prev => prev - 50)
+      toast.success('Concept unmarked')
     }
-    
-    // Log for debugging
-    console.log('Concept toggled:', id, 'Index:', currentIndex, 'Next:', nextConcept?.title)
   }
 
-  // Calculate completed count based on global progress state
   const completedCount = learningConcepts.filter((concept: any) => 
     userProgress.completedConcepts.includes(concept.id)
   ).length
   const progressPercent = Math.round((completedCount / learningConcepts.length) * 100)
 
-  const bg = isDark ? '#09090B' : '#FFFFFF'
   const text = isDark ? '#FAFAFA' : '#09090B'
   const muted = isDark ? '#A1A1AA' : '#71717A'
   const subtle = isDark ? '#18181B' : '#F4F4F5'
   const border = isDark ? '#27272A' : '#E4E4E7'
-  const accent = '#2563EB'
 
+  // Stats data
   const stats = [
-    { title: 'Concepts Learned', value: completedCount.toString(), change: '+12%', color: '#10B981', icon: CheckCircle2 },
-    { title: 'Study Hours', value: '24h', change: '+8%', color: '#F59E0B', icon: Clock },
-    { title: 'Videos Watched', value: '15', change: '+25%', color: '#EF4444', icon: Play },
-    { title: 'Progress', value: `${progressPercent}%`, change: '+15%', color: '#8B5CF6', icon: Target },
+    { 
+      title: 'Learning Streak', 
+      value: `${streak} days`, 
+      icon: Flame, 
+      color: '#F59E0B',
+      gradient: 'from-orange-500 to-red-500'
+    },
+    { 
+      title: 'Total XP', 
+      value: totalXP.toLocaleString(), 
+      icon: Zap, 
+      color: '#8B5CF6',
+      gradient: 'from-purple-500 to-pink-500'
+    },
+    { 
+      title: 'Concepts Done', 
+      value: `${completedCount}/${learningConcepts.length}`, 
+      icon: CheckCircle2, 
+      color: '#10B981',
+      gradient: 'from-emerald-500 to-teal-500'
+    },
+    { 
+      title: 'Progress', 
+      value: `${progressPercent}%`, 
+      icon: TrendingUp, 
+      color: '#3B82F6',
+      gradient: 'from-blue-500 to-cyan-500'
+    },
+  ]
+
+  // Quick actions
+  const quickActions = [
+    { icon: Target, label: 'Roadmaps', href: '/roadmaps', color: '#10B981', desc: 'View learning paths' },
+    { icon: Code2, label: 'Practice', href: '/practice', color: '#8B5CF6', desc: 'Coding challenges' },
+    { icon: Video, label: 'Videos', href: '/videos', color: '#F59E0B', desc: 'Tutorial videos' },
+    { icon: MessageSquare, label: 'AI Chat', href: '/resources', color: '#3B82F6', desc: 'Ask questions' },
   ]
 
   return (
     <PageWrapper>
       <div className="min-h-screen pt-16 sm:pt-20 md:pt-24" style={{ background: isDark ? '#0A0A0F' : '#F8FFFE' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         
-        {/* Hero Section - EXACT Same as Home Page */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-16">
-          {/* Badge - EXACT Same Style */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-6"
-            style={{ 
-              background: 'rgba(37,99,235,0.1)',
-              border: '1px solid rgba(37,99,235,0.2)'
-            }}
-          >
-            <Sparkles className="w-4 h-4" style={{ color: accent }} />
-            <span className="text-sm font-medium" style={{ color: accent }}>Your Learning Journey</span>
-          </motion.div>
-          
-          {/* Main Heading - EXACT Same Style */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6" style={{ color: text }}>
-            Welcome back, <GradientText>{user?.email?.split('@')[0] || 'Learner'}</GradientText>
-          </h1>
-          
-          {/* Description - EXACT Same Style */}
-          <p className="text-lg sm:text-xl leading-relaxed max-w-3xl mx-auto mb-8" style={{ color: muted }}>
-            Track your progress, continue your learning journey, and achieve your goals with personalized insights.
-          </p>
+        {/* Welcome Header */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          className="mb-8"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+            <div>
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-3"
+                style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}
+              >
+                <Sparkles className="w-4 h-4 text-blue-500" />
+                <span className="text-sm font-medium text-blue-500">Welcome back!</span>
+              </motion.div>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold" style={{ color: text }}>
+                Hey, <GradientText>{userName}</GradientText> 👋
+              </h1>
+              <p className="text-base sm:text-lg mt-2" style={{ color: muted }}>
+                Ready to continue your learning journey?
+              </p>
+            </div>
+            
+            {/* Streak Badge */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+              style={{ 
+                background: 'linear-gradient(135deg, rgba(249,115,22,0.1), rgba(239,68,68,0.1))',
+                border: '1px solid rgba(249,115,22,0.2)'
+              }}
+            >
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg">
+                <Flame className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold" style={{ color: text }}>{streak}</p>
+                <p className="text-xs" style={{ color: muted }}>Day Streak 🔥</p>
+              </div>
+            </motion.div>
+          </div>
         </motion.div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, i) => (
-            <motion.div
-              key={stat.title}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 * i, type: "spring", stiffness: 100 }}
-              whileHover={{ y: -4, scale: 1.02 }}
-              className="group relative bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700 overflow-hidden"
-            >
-              {/* Background Gradient */}
-              <div 
-                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{ background: `linear-gradient(135deg, ${stat.color}10, ${stat.color}05)` }}
-              />
-              
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-4">
-                  <div 
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform"
-                    style={{ background: `linear-gradient(135deg, ${stat.color}, ${stat.color}CC)` }}
-                  >
-                    <stat.icon className="w-7 h-7 text-white" />
-                  </div>
-                  <motion.span 
-                    whileHover={{ scale: 1.05 }}
-                    className="text-xs font-bold px-3 py-1.5 rounded-full shadow-sm"
-                    style={{ background: stat.color + '20', color: stat.color }}
-                  >
-                    {stat.change}
-                  </motion.span>
-                </div>
-                <h3 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                  {stat.value}
-                </h3>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{stat.title}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Progress Card */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }} 
           animate={{ opacity: 1, y: 0 }} 
           transition={{ delay: 0.1 }}
-          className="mb-8 p-4 sm:p-6 rounded-2xl"
-          style={{ 
-            background: isDark ? 'rgba(20,20,25,0.8)' : 'rgba(255,255,255,0.9)', 
-            border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` 
-          }}
+          className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
         >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-            <div>
-              <h2 className="text-base sm:text-lg font-bold" style={{ color: isDark ? '#fff' : '#000' }}>
-                {hasRoadmap ? currentRoadmap.skill?.name || 'Your Learning Path' : 'Starter Concepts'}
-              </h2>
-              <p className="text-xs sm:text-sm" style={{ color: isDark ? '#888' : '#666' }}>
-                {completedCount} of {learningConcepts.length} completed
-              </p>
-            </div>
-            {!hasRoadmap && (
-              <Link href="/roadmaps">
-                <motion.button 
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium w-full sm:w-auto justify-center"
-                  style={{ background: 'rgba(0,255,224,0.15)', color: '#00FFE0', border: '1px solid rgba(0,255,224,0.3)' }}
+          {stats.map((stat, i) => (
+            <motion.div
+              key={stat.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 + i * 0.05 }}
+              whileHover={{ y: -4, scale: 1.02 }}
+              className="relative overflow-hidden rounded-2xl p-4 sm:p-5"
+              style={{ 
+                background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                border: `1px solid ${border}`
+              }}
+            >
+              <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${stat.gradient} opacity-10 rounded-full -translate-y-8 translate-x-8`} />
+              <div className="relative z-10">
+                <div 
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-3"
+                  style={{ background: `${stat.color}20` }}
                 >
-                  <Target className="w-4 h-4" />
-                  Generate Roadmap
-                </motion.button>
-              </Link>
-            )}
-          </div>
-          
-          {/* Progress Bar */}
-          <div className="h-3 rounded-full overflow-hidden" style={{ background: isDark ? '#1a1a1a' : '#eee' }}>
-            <motion.div 
-              initial={{ width: 0 }} 
-              animate={{ width: `${progressPercent}%` }} 
-              transition={{ duration: 1, delay: 0.5 }}
-              className="h-full rounded-full"
-              style={{ background: 'linear-gradient(90deg, #00FFE0, #00F771)' }}
-            />
-          </div>
-          <p className="text-right text-sm mt-2 font-medium" style={{ color: '#00F771' }}>{progressPercent}%</p>
+                  <stat.icon className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: stat.color }} />
+                </div>
+                <p className="text-xl sm:text-2xl font-bold" style={{ color: text }}>{stat.value}</p>
+                <p className="text-xs sm:text-sm" style={{ color: muted }}>{stat.title}</p>
+              </div>
+            </motion.div>
+          ))}
         </motion.div>
 
-        {/* Learning Concepts Grid */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-            <h2 className="text-lg sm:text-xl font-bold" style={{ color: isDark ? '#fff' : '#000' }}>
-              {hasRoadmap ? 'Topics to Learn' : '10 Essential Concepts'}
-            </h2>
-            <p className="text-xs sm:text-sm" style={{ color: muted }}>
-              💡 Click to complete • 🔓 Unlocks next
-            </p>
-          </div>
-          
-          <div className="grid gap-3">
-            {learningConcepts.map((concept: any, i: number) => {
-              const isCompleted = userProgress.completedConcepts.includes(concept.id)
-              
-              // Sequential unlocking logic
-              const isLocked = (() => {
-                // First concept is always unlocked
-                if (i === 0) return false
-                
-                // Check if previous concept is completed
-                const previousConcept = learningConcepts[i - 1]
-                const isPreviousCompleted = userProgress.completedConcepts.includes(previousConcept.id)
-                
-                // Lock if previous concept is not completed
-                return !isPreviousCompleted
-              })()
-              
-              return (
-                <motion.div
-                  key={concept.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ 
-                    opacity: 1, 
-                    x: 0,
-                    scale: isLocked ? 0.98 : 1
-                  }}
-                  transition={{ 
-                    delay: 0.05 * i,
-                    scale: { duration: 0.2 }
-                  }}
-                  whileHover={!isLocked ? { scale: 1.02 } : {}}
-                  className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl transition-all ${
-                    isLocked 
-                      ? 'opacity-50 cursor-not-allowed' 
-                      : 'cursor-pointer hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]'
-                  }`}
-                  style={{ 
-                    background: isCompleted 
-                      ? (isDark ? 'rgba(0,247,113,0.1)' : 'rgba(0,247,113,0.08)')
-                      : (isDark ? 'rgba(20,20,25,0.8)' : 'rgba(255,255,255,0.9)'),
-                    border: `1px solid ${isCompleted ? 'rgba(0,247,113,0.3)' : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)')}`
-                  }}
-                  onClick={() => {
-                    if (isLocked) {
-                      toast.error('🔒 Complete the previous concept first!', { duration: 2000 })
-                    } else {
-                      toggleConcept(concept.id)
-                    }
-                  }}
-                >
-                  {/* Number/Status */}
-                  <div 
-                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ 
-                      background: isCompleted 
-                        ? 'rgba(0,247,113,0.2)' 
-                        : isLocked 
-                          ? (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)')
-                          : 'rgba(0,255,224,0.15)',
-                      border: isCompleted ? '1px solid rgba(0,247,113,0.4)' : '1px solid rgba(0,255,224,0.3)'
-                    }}
-                  >
-                    {isCompleted ? (
-                      <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: '#00F771' }} />
-                    ) : isLocked ? (
-                      <Lock className="w-3 h-3 sm:w-4 sm:h-4" style={{ color: isDark ? '#666' : '#888' }} />
-                    ) : (
-                      <span className="text-xs sm:text-sm font-bold" style={{ color: '#00FFE0' }}>{i + 1}</span>
-                    )}
+        <div className="grid lg:grid-cols-3 gap-6 mb-8">
+          {/* Main Progress Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ delay: 0.2 }}
+            className="lg:col-span-2 rounded-2xl overflow-hidden"
+            style={{ 
+              background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+              border: `1px solid ${border}`
+            }}
+          >
+            {/* Header */}
+            <div className="p-5 sm:p-6 border-b" style={{ borderColor: border }}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                    <Target className="w-6 h-6 text-white" />
                   </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className={`font-semibold text-xs sm:text-sm ${isCompleted ? 'line-through opacity-70' : ''}`} 
-                      style={{ color: isDark ? '#fff' : '#000' }}
-                    >
-                      {concept.title}
-                    </h3>
-                    <p className="text-xs truncate hidden sm:block" style={{ color: isDark ? '#666' : '#888' }}>
-                      {concept.desc}
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-bold" style={{ color: text }}>
+                      {hasRoadmap ? currentRoadmap.skill?.name || 'Your Learning Path' : 'Starter Concepts'}
+                    </h2>
+                    <p className="text-sm" style={{ color: muted }}>
+                      {completedCount} of {learningConcepts.length} completed
                     </p>
                   </div>
-
-                  {/* Meta */}
-                  <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3 flex-shrink-0">
-                    <span className="text-xs px-2 py-1 rounded-lg hidden sm:block" 
-                      style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', color: isDark ? '#888' : '#666' }}
+                </div>
+                {!hasRoadmap && (
+                  <Link href="/roadmaps">
+                    <motion.button 
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg"
                     >
-                      {concept.category}
-                    </span>
-                    <div className="flex items-center gap-1 text-xs" style={{ color: isDark ? '#666' : '#888' }}>
-                      <Clock className="w-3 h-3" />
-                      <span className="hidden sm:inline">{concept.duration}</span>
-                      <span className="sm:hidden">{concept.duration.split(' ')[0]}w</span>
-                    </div>
-                    {!isLocked && !isCompleted && (
-                      <ChevronRight className="w-4 h-4 hidden sm:block" style={{ color: isDark ? '#666' : '#888' }} />
-                    )}
-                  </div>
-                </motion.div>
-              )
-            })}
-          </div>
-        </motion.div>
-
-        {/* Quick Actions */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ delay: 0.3 }}
-          className="mt-8"
-        >
-          <h2 className="text-base sm:text-lg font-bold mb-4" style={{ color: isDark ? '#fff' : '#000' }}>Quick Actions</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            {[
-              { icon: Target, label: 'Roadmaps', href: '/roadmaps', color: '#00F771' },
-              { icon: Code2, label: 'Practice', href: '/practice', color: '#B794F6' },
-              { icon: Video, label: 'Videos', href: '/videos', color: '#00FFE0' },
-              { icon: FileText, label: 'Resources', href: '/resources', color: '#FF6B9D' },
-            ].map((action) => (
-              <Link key={action.label} href={action.href}>
-                <motion.div 
-                  whileHover={{ y: -4 }} 
-                  className="p-3 sm:p-4 rounded-xl text-center cursor-pointer"
-                  style={{ 
-                    background: isDark ? 'rgba(20,20,25,0.8)' : 'rgba(255,255,255,0.9)', 
-                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` 
-                  }}
-                >
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center mx-auto mb-2"
-                    style={{ background: `${action.color}15` }}
+                      <Sparkles className="w-4 h-4" />
+                      Generate Roadmap
+                    </motion.button>
+                  </Link>
+                )}
+              </div>
+              
+              {/* Progress Bar */}
+              <div className="relative">
+                <div className="h-3 rounded-full overflow-hidden" style={{ background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}>
+                  <motion.div 
+                    initial={{ width: 0 }} 
+                    animate={{ width: `${progressPercent}%` }} 
+                    transition={{ duration: 1, delay: 0.3 }}
+                    className="h-full rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"
+                  />
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-xs" style={{ color: muted }}>Progress</span>
+                  <span className="text-sm font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
+                    {progressPercent}%
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Concepts List */}
+            <div className="p-4 sm:p-6 max-h-[400px] overflow-y-auto">
+              <div className="space-y-2">
+                {learningConcepts.slice(0, 6).map((concept: any, i: number) => {
+                  const isCompleted = userProgress.completedConcepts.includes(concept.id)
+                  const isLocked = i > 0 && !userProgress.completedConcepts.includes(learningConcepts[i - 1].id)
+                  
+                  return (
+                    <motion.div
+                      key={concept.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.05 * i }}
+                      whileHover={!isLocked ? { x: 4 } : {}}
+                      onClick={() => isLocked ? toast.error('🔒 Complete previous concept first!') : toggleConcept(concept.id)}
+                      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${
+                        isLocked ? 'opacity-50' : 'hover:bg-white/5'
+                      }`}
+                      style={{ 
+                        background: isCompleted 
+                          ? 'rgba(16,185,129,0.1)' 
+                          : 'transparent',
+                        border: `1px solid ${isCompleted ? 'rgba(16,185,129,0.3)' : 'transparent'}`
+                      }}
+                    >
+                      <div 
+                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ 
+                          background: isCompleted 
+                            ? 'rgba(16,185,129,0.2)' 
+                            : isLocked 
+                              ? (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)')
+                              : 'rgba(59,130,246,0.1)'
+                        }}
+                      >
+                        {isCompleted ? (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                        ) : isLocked ? (
+                          <Lock className="w-4 h-4" style={{ color: muted }} />
+                        ) : (
+                          <span className="text-sm font-bold text-blue-500">{i + 1}</span>
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <h3 className={`font-medium text-sm ${isCompleted ? 'line-through opacity-70' : ''}`} style={{ color: text }}>
+                          {concept.title}
+                        </h3>
+                        <p className="text-xs truncate" style={{ color: muted }}>{concept.desc}</p>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs px-2 py-1 rounded-lg hidden sm:block" 
+                          style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', color: muted }}
+                        >
+                          {concept.category}
+                        </span>
+                        {!isLocked && !isCompleted && (
+                          <ChevronRight className="w-4 h-4" style={{ color: muted }} />
+                        )}
+                      </div>
+                    </motion.div>
+                  )
+                })}
+              </div>
+              
+              {learningConcepts.length > 6 && (
+                <Link href="/roadmaps">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    className="w-full mt-4 py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2"
+                    style={{ 
+                      background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                      color: text
+                    }}
                   >
-                    <action.icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: action.color }} />
+                    View All {learningConcepts.length} Concepts
+                    <ArrowRight className="w-4 h-4" />
+                  </motion.button>
+                </Link>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Quick Actions */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ delay: 0.3 }}
+              className="rounded-2xl p-5"
+              style={{ 
+                background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                border: `1px solid ${border}`
+              }}
+            >
+              <h3 className="text-lg font-bold mb-4" style={{ color: text }}>Quick Actions</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {quickActions.map((action, i) => (
+                  <Link key={action.label} href={action.href}>
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.3 + i * 0.05 }}
+                      whileHover={{ y: -4, scale: 1.02 }}
+                      className="p-4 rounded-xl text-center cursor-pointer transition-all"
+                      style={{ 
+                        background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                        border: `1px solid ${border}`
+                      }}
+                    >
+                      <div 
+                        className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2"
+                        style={{ background: `${action.color}15` }}
+                      >
+                        <action.icon className="w-5 h-5" style={{ color: action.color }} />
+                      </div>
+                      <p className="text-sm font-medium" style={{ color: text }}>{action.label}</p>
+                      <p className="text-xs mt-0.5" style={{ color: muted }}>{action.desc}</p>
+                    </motion.div>
+                  </Link>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Achievement Card */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ delay: 0.4 }}
+              className="rounded-2xl p-5 bg-gradient-to-br from-purple-500/10 to-pink-500/10"
+              style={{ border: '1px solid rgba(139,92,246,0.2)' }}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                  <Trophy className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold" style={{ color: text }}>Achievements</h3>
+                  <p className="text-xs" style={{ color: muted }}>Keep learning to unlock!</p>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                {[
+                  { name: 'First Steps', desc: 'Complete 1 concept', done: completedCount >= 1 },
+                  { name: 'Getting Started', desc: 'Complete 5 concepts', done: completedCount >= 5 },
+                  { name: 'On Fire', desc: '7 day streak', done: streak >= 7 },
+                ].map((badge, i) => (
+                  <div 
+                    key={i}
+                    className={`flex items-center gap-3 p-3 rounded-xl ${badge.done ? 'opacity-100' : 'opacity-50'}`}
+                    style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}
+                  >
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${badge.done ? 'bg-gradient-to-br from-yellow-400 to-orange-500' : ''}`}
+                      style={{ background: badge.done ? undefined : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)') }}
+                    >
+                      <Star className={`w-4 h-4 ${badge.done ? 'text-white' : ''}`} style={{ color: badge.done ? undefined : muted }} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium" style={{ color: text }}>{badge.name}</p>
+                      <p className="text-xs" style={{ color: muted }}>{badge.desc}</p>
+                    </div>
+                    {badge.done && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
                   </div>
-                  <span className="text-xs sm:text-sm font-medium" style={{ color: isDark ? '#fff' : '#000' }}>{action.label}</span>
-                </motion.div>
-              </Link>
-            ))}
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Daily Tip */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              transition={{ delay: 0.5 }}
+              className="rounded-2xl p-5 bg-gradient-to-br from-blue-500/10 to-cyan-500/10"
+              style={{ border: '1px solid rgba(59,130,246,0.2)' }}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="w-5 h-5 text-blue-500" />
+                <h3 className="font-bold" style={{ color: text }}>Daily Tip</h3>
+              </div>
+              <p className="text-sm leading-relaxed" style={{ color: muted }}>
+                💡 Consistency beats intensity! Even 30 minutes of focused learning daily leads to remarkable progress over time.
+              </p>
+            </motion.div>
           </div>
-        </motion.div>
+        </div>
         </div>
       </div>
     </PageWrapper>
