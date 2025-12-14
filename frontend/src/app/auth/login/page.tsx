@@ -44,23 +44,24 @@ export default function LoginPage() {
     try {
       const { data: session } = await supabase.auth.getSession()
       if (session?.session?.user) {
-        const { data: roadmap } = await supabase
+        const { data: roadmaps, error } = await supabase
           .from('roadmaps')
           .select('*')
           .eq('user_id', session.session.user.id)
           .order('created_at', { ascending: false })
           .limit(1)
-          .single()
         
-        if (roadmap) {
-          setCurrentRoadmap(roadmap)
+        if (!error && roadmaps && roadmaps.length > 0) {
+          setCurrentRoadmap(roadmaps[0])
           router.push('/dashboard')
         } else {
           router.push('/onboarding')
         }
+      } else {
+        router.push('/onboarding')
       }
     } catch (err) {
-      // No roadmap found, redirect to onboarding
+      console.error('Error checking roadmap:', err)
       router.push('/onboarding')
     } finally {
       setLoading(false)

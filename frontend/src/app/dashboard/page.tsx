@@ -48,22 +48,22 @@ export default function DashboardPage() {
     const loadRoadmap = async () => {
       if (user && !currentRoadmap) {
         try {
-          const { data: roadmap } = await supabase
+          const { data: roadmaps, error } = await supabase
             .from('roadmaps')
             .select('*')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(1)
-            .single()
           
-          if (roadmap) {
-            setCurrentRoadmap(roadmap)
+          if (!error && roadmaps && roadmaps.length > 0) {
+            setCurrentRoadmap(roadmaps[0])
           } else {
             // No roadmap found, redirect to onboarding
             router.push('/onboarding')
           }
         } catch (err) {
           console.error('Error loading roadmap:', err)
+          router.push('/onboarding')
         } finally {
           setLoadingRoadmap(false)
         }
