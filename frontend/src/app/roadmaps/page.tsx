@@ -306,6 +306,7 @@ export default function RoadmapsPage() {
   const [showRoadmapView, setShowRoadmapView] = useState(false)
   const [expandedConcepts, setExpandedConcepts] = useState<number[]>([])
   const [completedConcepts, setCompletedConcepts] = useState<number[]>([])
+  const [currentLevel, setCurrentLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner')
 
   // Scroll to top when roadmap view is shown
   useEffect(() => {
@@ -313,6 +314,26 @@ export default function RoadmapsPage() {
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }, [showRoadmapView])
+
+  // Check if all concepts are completed and auto-progress to next level
+  useEffect(() => {
+    if (generatedRoadmap && completedConcepts.length === generatedRoadmap.concepts.length && completedConcepts.length > 0) {
+      const nextLevel = currentLevel === 'beginner' ? 'intermediate' : currentLevel === 'intermediate' ? 'advanced' : null
+      
+      if (nextLevel) {
+        toast.success(`🎉 ${currentLevel.charAt(0).toUpperCase() + currentLevel.slice(1)} level completed!`, { duration: 3000 })
+        
+        setTimeout(() => {
+          toast.success(`🚀 Generating ${nextLevel} level roadmap...`, { duration: 2000 })
+          setCompletedConcepts([])
+          setExpandedConcepts([])
+          generateRoadmapForLevel(nextLevel, generatedRoadmap.stack)
+        }, 2000)
+      } else {
+        toast.success('🏆 Congratulations! You have mastered all levels!', { duration: 5000 })
+      }
+    }
+  }, [completedConcepts, generatedRoadmap])
 
   const toggleConcept = (conceptId: number) => {
     setExpandedConcepts(prev => 
@@ -332,6 +353,402 @@ export default function RoadmapsPage() {
         return [...prev, conceptId]
       }
     })
+  }
+
+  // Level-specific concepts generator
+  const getLevelConcepts = (stackName: string, level: 'beginner' | 'intermediate' | 'advanced') => {
+    const conceptsByLevel = {
+      beginner: [
+        { 
+          id: 1, 
+          name: `Introduction to ${stackName}`, 
+          description: 'Get started with the basics and understand what it is', 
+          subTopics: [
+            `What is ${stackName} and why use it`,
+            'History and evolution',
+            'Use cases and applications',
+            'Comparing with alternatives',
+            'Setting expectations and goals'
+          ]
+        },
+        { 
+          id: 2, 
+          name: 'Development Environment Setup', 
+          description: 'Install and configure all required tools', 
+          subTopics: [
+            'Installing required software',
+            'Setting up VS Code or preferred IDE',
+            'Configuring extensions and plugins',
+            'Terminal and command line basics',
+            'Creating your first project folder'
+          ]
+        },
+        { 
+          id: 3, 
+          name: 'Basic Syntax & Structure', 
+          description: 'Learn the fundamental syntax rules', 
+          subTopics: [
+            'Basic syntax and keywords',
+            'Code structure and formatting',
+            'Comments and documentation',
+            'Naming conventions',
+            'Writing your first code'
+          ]
+        },
+        { 
+          id: 4, 
+          name: 'Variables & Data Types', 
+          description: 'Understand how to store and manage data', 
+          subTopics: [
+            'Declaring variables',
+            'Primitive data types (strings, numbers)',
+            'Boolean and null values',
+            'Type checking basics',
+            'Variable naming best practices'
+          ]
+        },
+        { 
+          id: 5, 
+          name: 'Basic Operators', 
+          description: 'Learn arithmetic and comparison operators', 
+          subTopics: [
+            'Arithmetic operators (+, -, *, /)',
+            'Comparison operators (==, !=, <, >)',
+            'Assignment operators',
+            'String concatenation',
+            'Operator precedence'
+          ]
+        },
+        { 
+          id: 6, 
+          name: 'Conditional Statements', 
+          description: 'Make decisions in your code', 
+          subTopics: [
+            'If statements',
+            'If-else conditions',
+            'Else-if chains',
+            'Ternary operators',
+            'Simple decision making'
+          ]
+        },
+        { 
+          id: 7, 
+          name: 'Basic Loops', 
+          description: 'Repeat actions with loops', 
+          subTopics: [
+            'For loops basics',
+            'While loops',
+            'Loop counters',
+            'Breaking out of loops',
+            'Simple iterations'
+          ]
+        },
+        { 
+          id: 8, 
+          name: 'Simple Functions', 
+          description: 'Create reusable code blocks', 
+          subTopics: [
+            'What are functions',
+            'Creating simple functions',
+            'Calling functions',
+            'Function parameters basics',
+            'Return statements'
+          ]
+        },
+        { 
+          id: 9, 
+          name: 'Basic Input/Output', 
+          description: 'Handle user input and display output', 
+          subTopics: [
+            'Printing output',
+            'Reading user input',
+            'Simple prompts',
+            'Displaying messages',
+            'Basic formatting'
+          ]
+        },
+        { 
+          id: 10, 
+          name: 'Your First Project', 
+          description: 'Build a simple beginner project', 
+          subTopics: [
+            'Project planning',
+            'Applying learned concepts',
+            'Building step by step',
+            'Testing your code',
+            'Celebrating your achievement'
+          ]
+        }
+      ],
+      intermediate: [
+        { 
+          id: 1, 
+          name: 'Advanced Data Structures', 
+          description: 'Master arrays, objects, and collections', 
+          subTopics: [
+            'Arrays and array methods',
+            'Objects and properties',
+            'Maps and Sets',
+            'Nested data structures',
+            'Data manipulation techniques'
+          ]
+        },
+        { 
+          id: 2, 
+          name: 'Advanced Functions', 
+          description: 'Deep dive into function patterns', 
+          subTopics: [
+            'Arrow functions',
+            'Callback functions',
+            'Closures and scope',
+            'Higher-order functions',
+            'Function composition'
+          ]
+        },
+        { 
+          id: 3, 
+          name: 'Error Handling', 
+          description: 'Gracefully handle errors and exceptions', 
+          subTopics: [
+            'Try-catch blocks',
+            'Throwing errors',
+            'Custom error types',
+            'Error propagation',
+            'Debugging strategies'
+          ]
+        },
+        { 
+          id: 4, 
+          name: 'Asynchronous Programming', 
+          description: 'Handle async operations effectively', 
+          subTopics: [
+            'Callbacks in depth',
+            'Promises',
+            'Async/await syntax',
+            'Error handling in async code',
+            'Parallel vs sequential execution'
+          ]
+        },
+        { 
+          id: 5, 
+          name: 'Modules & Imports', 
+          description: 'Organize code into modules', 
+          subTopics: [
+            'Module systems',
+            'Import and export',
+            'Default vs named exports',
+            'Module organization',
+            'Dependency management'
+          ]
+        },
+        { 
+          id: 6, 
+          name: 'Working with APIs', 
+          description: 'Fetch and send data to APIs', 
+          subTopics: [
+            'HTTP methods',
+            'Fetch API',
+            'Handling responses',
+            'API authentication basics',
+            'Error handling for APIs'
+          ]
+        },
+        { 
+          id: 7, 
+          name: 'State Management', 
+          description: 'Manage application state effectively', 
+          subTopics: [
+            'State concepts',
+            'Local vs global state',
+            'State patterns',
+            'Immutability',
+            'State debugging'
+          ]
+        },
+        { 
+          id: 8, 
+          name: 'Testing Fundamentals', 
+          description: 'Write tests for your code', 
+          subTopics: [
+            'Why testing matters',
+            'Unit testing basics',
+            'Test frameworks',
+            'Writing test cases',
+            'Running and debugging tests'
+          ]
+        },
+        { 
+          id: 9, 
+          name: 'Version Control with Git', 
+          description: 'Master Git for collaboration', 
+          subTopics: [
+            'Branching strategies',
+            'Merging and rebasing',
+            'Resolving conflicts',
+            'Pull requests',
+            'Git workflows'
+          ]
+        },
+        { 
+          id: 10, 
+          name: 'Intermediate Project', 
+          description: 'Build a full-featured application', 
+          subTopics: [
+            'Project architecture',
+            'Implementing features',
+            'API integration',
+            'Error handling',
+            'Code review preparation'
+          ]
+        }
+      ],
+      advanced: [
+        { 
+          id: 1, 
+          name: 'Design Patterns', 
+          description: 'Master software design patterns', 
+          subTopics: [
+            'Creational patterns',
+            'Structural patterns',
+            'Behavioral patterns',
+            'Pattern selection criteria',
+            'Real-world applications'
+          ]
+        },
+        { 
+          id: 2, 
+          name: 'Performance Optimization', 
+          description: 'Optimize for speed and efficiency', 
+          subTopics: [
+            'Profiling and benchmarking',
+            'Memory optimization',
+            'Algorithm efficiency',
+            'Caching strategies',
+            'Lazy loading'
+          ]
+        },
+        { 
+          id: 3, 
+          name: 'Security Best Practices', 
+          description: 'Secure your applications', 
+          subTopics: [
+            'Common vulnerabilities',
+            'Input validation',
+            'Authentication patterns',
+            'Authorization strategies',
+            'Security auditing'
+          ]
+        },
+        { 
+          id: 4, 
+          name: 'Advanced Architecture', 
+          description: 'Design scalable systems', 
+          subTopics: [
+            'Clean architecture',
+            'Microservices concepts',
+            'Event-driven design',
+            'Domain-driven design',
+            'Scalability patterns'
+          ]
+        },
+        { 
+          id: 5, 
+          name: 'Advanced Testing', 
+          description: 'Comprehensive testing strategies', 
+          subTopics: [
+            'Integration testing',
+            'End-to-end testing',
+            'Mocking and stubbing',
+            'Test coverage optimization',
+            'CI/CD testing pipelines'
+          ]
+        },
+        { 
+          id: 6, 
+          name: 'DevOps & Deployment', 
+          description: 'Deploy and manage applications', 
+          subTopics: [
+            'Containerization with Docker',
+            'CI/CD pipelines',
+            'Cloud deployment',
+            'Monitoring and logging',
+            'Infrastructure as code'
+          ]
+        },
+        { 
+          id: 7, 
+          name: 'Code Quality & Review', 
+          description: 'Maintain high code quality', 
+          subTopics: [
+            'Code review best practices',
+            'Linting and formatting',
+            'Documentation standards',
+            'Refactoring techniques',
+            'Technical debt management'
+          ]
+        },
+        { 
+          id: 8, 
+          name: 'Team Collaboration', 
+          description: 'Work effectively in teams', 
+          subTopics: [
+            'Agile methodologies',
+            'Code collaboration tools',
+            'Communication skills',
+            'Mentoring juniors',
+            'Technical leadership'
+          ]
+        },
+        { 
+          id: 9, 
+          name: 'System Design', 
+          description: 'Design complex systems', 
+          subTopics: [
+            'System design principles',
+            'Database design',
+            'API design',
+            'Load balancing',
+            'Disaster recovery'
+          ]
+        },
+        { 
+          id: 10, 
+          name: 'Production-Ready Project', 
+          description: 'Build enterprise-level application', 
+          subTopics: [
+            'Production architecture',
+            'Performance tuning',
+            'Security implementation',
+            'Monitoring setup',
+            'Documentation and handoff'
+          ]
+        }
+      ]
+    }
+    
+    return conceptsByLevel[level].map(c => ({ ...c, isCompleted: false, category: level.charAt(0).toUpperCase() + level.slice(1) }))
+  }
+
+  const generateRoadmapForLevel = async (level: 'beginner' | 'intermediate' | 'advanced', stack: any) => {
+    setGenerating(true)
+    setCurrentLevel(level)
+    
+    await new Promise(r => setTimeout(r, 1500))
+    
+    const newRoadmap = {
+      id: Date.now(),
+      stack: stack,
+      level: level,
+      title: `${stack.name} - ${level.charAt(0).toUpperCase() + level.slice(1)} Path`,
+      description: `Complete ${stack.name} learning path for ${level} developers`,
+      estimatedWeeks: level === 'beginner' ? 4 : level === 'intermediate' ? 8 : 12,
+      concepts: getLevelConcepts(stack.name, level)
+    }
+    
+    setGeneratedRoadmap(newRoadmap)
+    setGenerating(false)
+    setShowRoadmapView(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const bg = isDark ? '#09090B' : '#FFFFFF'
@@ -523,160 +940,22 @@ export default function RoadmapsPage() {
     
     setGenerating(true)
     setShowLevelModal(false)
+    setCurrentLevel(level)
+    setCompletedConcepts([])
+    setExpandedConcepts([])
     
     // Simulate AI roadmap generation
     await new Promise(r => setTimeout(r, 2000))
     
-    // Generate a sample roadmap based on the selected stack and level
+    // Generate a level-specific roadmap with appropriate concepts
     const sampleRoadmap = {
       id: Date.now(),
       stack: selectedStack,
       level: level,
       title: `${selectedStack.name} - ${level.charAt(0).toUpperCase() + level.slice(1)} Path`,
       description: `Complete ${selectedStack.name} learning path for ${level} developers`,
-      estimatedWeeks: selectedStack.duration.includes('months') ? parseInt(selectedStack.duration) * 4 : 8,
-      concepts: [
-        { 
-          id: 1, 
-          name: `${selectedStack.name} Setup & Environment`, 
-          description: 'Install tools and configure development environment', 
-          isCompleted: false, 
-          category: 'Setup',
-          subTopics: [
-            'Installing required software and tools',
-            'Setting up code editor (VS Code)',
-            'Configuring terminal and command line',
-            'Version control setup (Git)',
-            'Creating your first project structure'
-          ]
-        },
-        { 
-          id: 2, 
-          name: 'Core Syntax & Fundamentals', 
-          description: 'Learn basic syntax and core concepts', 
-          isCompleted: false, 
-          category: 'Basics',
-          subTopics: [
-            'Understanding basic syntax rules',
-            'Writing your first program',
-            'Comments and documentation',
-            'Code structure and formatting',
-            'Basic input/output operations'
-          ]
-        },
-        { 
-          id: 3, 
-          name: 'Variables & Data Types', 
-          description: 'Understanding data structures and variables', 
-          isCompleted: false, 
-          category: 'Basics',
-          subTopics: [
-            'Declaring and initializing variables',
-            'Primitive data types (string, number, boolean)',
-            'Complex data types (arrays, objects)',
-            'Type conversion and coercion',
-            'Constants and immutability'
-          ]
-        },
-        { 
-          id: 4, 
-          name: 'Functions & Methods', 
-          description: 'Creating reusable code blocks', 
-          isCompleted: false, 
-          category: 'Intermediate',
-          subTopics: [
-            'Function declaration and expressions',
-            'Parameters and arguments',
-            'Return values and scope',
-            'Arrow functions and callbacks',
-            'Higher-order functions'
-          ]
-        },
-        { 
-          id: 5, 
-          name: 'Control Flow & Logic', 
-          description: 'Conditional statements and loops', 
-          isCompleted: false, 
-          category: 'Intermediate',
-          subTopics: [
-            'If/else statements',
-            'Switch cases',
-            'For and while loops',
-            'Break and continue',
-            'Logical operators'
-          ]
-        },
-        { 
-          id: 6, 
-          name: 'Error Handling', 
-          description: 'Managing and debugging errors', 
-          isCompleted: false, 
-          category: 'Intermediate',
-          subTopics: [
-            'Try/catch blocks',
-            'Throwing custom errors',
-            'Error types and messages',
-            'Debugging techniques',
-            'Logging and monitoring'
-          ]
-        },
-        { 
-          id: 7, 
-          name: 'Advanced Features', 
-          description: 'Exploring advanced functionality', 
-          isCompleted: false, 
-          category: 'Advanced',
-          subTopics: [
-            'Asynchronous programming',
-            'Promises and async/await',
-            'Modules and imports',
-            'Classes and OOP',
-            'Decorators and metadata'
-          ]
-        },
-        { 
-          id: 8, 
-          name: 'Best Practices & Patterns', 
-          description: 'Industry standards and design patterns', 
-          isCompleted: false, 
-          category: 'Advanced',
-          subTopics: [
-            'Code organization patterns',
-            'DRY and SOLID principles',
-            'Design patterns overview',
-            'Clean code guidelines',
-            'Performance optimization'
-          ]
-        },
-        { 
-          id: 9, 
-          name: 'Testing & Debugging', 
-          description: 'Writing tests and debugging techniques', 
-          isCompleted: false, 
-          category: 'Advanced',
-          subTopics: [
-            'Unit testing basics',
-            'Test-driven development',
-            'Integration testing',
-            'Debugging tools and techniques',
-            'Code coverage and quality'
-          ]
-        },
-        { 
-          id: 10, 
-          name: 'Real-world Projects', 
-          description: 'Build production-ready applications', 
-          isCompleted: false, 
-          category: 'Projects',
-          subTopics: [
-            'Project planning and architecture',
-            'Building a complete application',
-            'Deployment and hosting',
-            'CI/CD pipelines',
-            'Maintenance and updates'
-          ]
-        }
-      ]
+      estimatedWeeks: level === 'beginner' ? 4 : level === 'intermediate' ? 8 : 12,
+      concepts: getLevelConcepts(selectedStack.name, level)
     }
     
     setGeneratedRoadmap(sampleRoadmap)
@@ -723,6 +1002,52 @@ export default function RoadmapsPage() {
                 </h1>
                 <p className="text-base sm:text-lg" style={{ color: muted }}>
                   {generatedRoadmap.description} • {generatedRoadmap.estimatedWeeks} weeks
+                </p>
+              </div>
+
+              {/* Level Progress Indicator */}
+              <div className="mb-8 p-4 rounded-2xl" style={{ background: subtle, border: '1px solid ' + border }}>
+                <div className="flex items-center justify-center gap-4">
+                  {['beginner', 'intermediate', 'advanced'].map((level, idx) => {
+                    const isActive = currentLevel === level
+                    const isPassed = (currentLevel === 'intermediate' && level === 'beginner') || 
+                                     (currentLevel === 'advanced' && (level === 'beginner' || level === 'intermediate'))
+                    const levelColors = {
+                      beginner: '#10B981',
+                      intermediate: '#F59E0B',
+                      advanced: '#EF4444'
+                    }
+                    
+                    return (
+                      <div key={level} className="flex items-center gap-2">
+                        <div 
+                          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${isActive ? 'ring-4 ring-offset-2' : ''}`}
+                          style={{ 
+                            background: isActive || isPassed ? levelColors[level as keyof typeof levelColors] : muted + '30',
+                            color: isActive || isPassed ? '#fff' : muted,
+                            ringColor: isActive ? levelColors[level as keyof typeof levelColors] + '50' : 'transparent'
+                          }}
+                        >
+                          {isPassed ? <Check className="w-5 h-5" /> : idx + 1}
+                        </div>
+                        <span 
+                          className="text-sm font-medium hidden sm:block"
+                          style={{ color: isActive ? levelColors[level as keyof typeof levelColors] : muted }}
+                        >
+                          {level.charAt(0).toUpperCase() + level.slice(1)}
+                        </span>
+                        {idx < 2 && (
+                          <div 
+                            className="w-8 sm:w-16 h-1 rounded-full mx-2"
+                            style={{ background: isPassed || (isActive && level !== 'beginner') ? levelColors[level as keyof typeof levelColors] : muted + '30' }}
+                          />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+                <p className="text-center text-xs mt-3" style={{ color: muted }}>
+                  Complete all {currentLevel} concepts to unlock the next level!
                 </p>
               </div>
 
