@@ -30,9 +30,14 @@ app.use(cors({
       ]
     : 'http://localhost:3000',
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(morgan('dev'));
 app.use(express.json());
+
+// Handle preflight requests
+app.options('*', cors());
 
 // Root endpoint
 app.get('/', (req, res) => {
