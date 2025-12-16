@@ -40,41 +40,46 @@ export default function LoginPage() {
     }
     toast.success('Welcome back!')
     
-    // Check if user has completed onboarding by fetching roadmap from Supabase
+    // Check if user has completed onboarding via backend API
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
-        // First check if user has a profile (completed onboarding)
-        const { data: profile, error: profileError } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
+        console.log('🔍 [LOGIN] Checking profile for user:', session.user.id)
         
-        if (!profileError && profile) {
-          console.log('Profile found, checking for roadmap...')
-          // Profile exists, check for roadmap
-          const { data: roadmaps, error } = await supabase
+        // Use backend API which has proper service role access
+        const response = await fetch(`http://localhost:5000/api/users/profile/${session.user.id}`)
+        
+        if (response.ok) {
+          const result = await response.json()
+          console.log('✅ [LOGIN] Profile found:', result.profile)
+          
+          // Check for roadmap
+          const { data: roadmaps } = await supabase
             .from('roadmaps')
             .select('*')
             .eq('user_id', session.user.id)
             .order('created_at', { ascending: false })
             .limit(1)
           
-          if (!error && roadmaps && roadmaps.length > 0) {
+          if (roadmaps && roadmaps.length > 0) {
             setCurrentRoadmap(roadmaps[0])
           }
-          // Always go to dashboard if profile exists, even without roadmap
+          
+          // Always go to dashboard if profile exists
           router.push('/dashboard')
-        } else {
-          console.log('No profile found, redirecting to onboarding')
+        } else if (response.status === 404) {
+          console.log('❌ [LOGIN] No profile found (404), redirecting to onboarding')
           router.push('/onboarding')
+        } else {
+          console.error('⚠️ [LOGIN] Profile check failed:', response.status)
+          // On error, default to dashboard (better UX than onboarding loop)
+          router.push('/dashboard')
         }
       } else {
         router.push('/onboarding')
       }
     } catch (err) {
-      console.error('Error checking profile:', err)
+      console.error('❌ [LOGIN] Error checking profile:', err)
       router.push('/dashboard') // Default to dashboard on error
     } finally {
       setLoading(false)
