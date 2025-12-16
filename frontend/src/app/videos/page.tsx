@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
   Video, Search, Play, Clock, Eye, ExternalLink,
@@ -45,6 +46,46 @@ const videoLibrary: Record<string, any[]> = {
     { id: 16, title: 'Git and GitHub for Beginners', channel: 'freeCodeCamp', duration: '1:08:29', views: '2.8M', videoId: 'RGOj5yH7evk', url: 'https://www.youtube.com/watch?v=RGOj5yH7evk' },
     { id: 17, title: 'Git Tutorial for Beginners', channel: 'Programming with Mosh', duration: '1:09:13', views: '1.5M', videoId: '8JJ101D3knE', url: 'https://www.youtube.com/watch?v=8JJ101D3knE' },
   ],
+  'Python': [
+    { id: 21, title: 'Python for Beginners', channel: 'freeCodeCamp', duration: '4:26:52', views: '8.2M', videoId: 'rfscVS0vtbw', url: 'https://www.youtube.com/watch?v=rfscVS0vtbw' },
+    { id: 22, title: 'Python Full Course', channel: 'Programming with Mosh', duration: '6:14:07', views: '4.1M', videoId: '_uQrJ0TkZlc', url: 'https://www.youtube.com/watch?v=_uQrJ0TkZlc' },
+  ],
+  'MongoDB': [
+    { id: 23, title: 'MongoDB Crash Course', channel: 'Traversy Media', duration: '30:44', views: '1.2M', videoId: '-56x56UppqQ', url: 'https://www.youtube.com/watch?v=-56x56UppqQ' },
+    { id: 24, title: 'MongoDB Tutorial for Beginners', channel: 'Academind', duration: '1:14:32', views: '890K', videoId: '9OPP_1eAENg', url: 'https://www.youtube.com/watch?v=9OPP_1eAENg' },
+  ],
+  'SQL': [
+    { id: 25, title: 'SQL Tutorial - Full Database Course', channel: 'freeCodeCamp', duration: '4:20:28', views: '3.5M', videoId: 'HXV3zeQKqGY', url: 'https://www.youtube.com/watch?v=HXV3zeQKqGY' },
+    { id: 26, title: 'MySQL Tutorial for Beginners', channel: 'Programming with Mosh', duration: '3:10:14', views: '2.8M', videoId: '7S_tz1z_5bA', url: 'https://www.youtube.com/watch?v=7S_tz1z_5bA' },
+  ],
+  'Docker': [
+    { id: 27, title: 'Docker Tutorial for Beginners', channel: 'TechWorld with Nana', duration: '3:10:23', views: '2.1M', videoId: '3c-iBn73dDE', url: 'https://www.youtube.com/watch?v=3c-iBn73dDE' },
+    { id: 28, title: 'Docker Crash Course', channel: 'Traversy Media', duration: '46:33', views: '1.5M', videoId: 'pg19Z8LL06w', url: 'https://www.youtube.com/watch?v=pg19Z8LL06w' },
+  ],
+  'AWS': [
+    { id: 29, title: 'AWS Tutorial for Beginners', channel: 'freeCodeCamp', duration: '4:13:52', views: '1.8M', videoId: 'ulprqHHWlng', url: 'https://www.youtube.com/watch?v=ulprqHHWlng' },
+    { id: 30, title: 'AWS Certified Cloud Practitioner', channel: 'freeCodeCamp', duration: '13:56:29', views: '3.2M', videoId: 'SOTamWNgDKc', url: 'https://www.youtube.com/watch?v=SOTamWNgDKc' },
+  ],
+  'Redux': [
+    { id: 31, title: 'Redux Tutorial for Beginners', channel: 'Dev Ed', duration: '51:17', views: '890K', videoId: 'CVpUuw9XSjY', url: 'https://www.youtube.com/watch?v=CVpUuw9XSjY' },
+    { id: 32, title: 'Redux Crash Course', channel: 'Traversy Media', duration: '35:18', views: '750K', videoId: '93p3LxR9xfM', url: 'https://www.youtube.com/watch?v=93p3LxR9xfM' },
+  ],
+  'Vue.js': [
+    { id: 33, title: 'Vue.js Course for Beginners', channel: 'freeCodeCamp', duration: '3:20:46', views: '1.1M', videoId: 'FXpIoQ_rT_c', url: 'https://www.youtube.com/watch?v=FXpIoQ_rT_c' },
+    { id: 34, title: 'Vue 3 Tutorial', channel: 'Net Ninja', duration: '45:23', views: '620K', videoId: 'YrxBCBibVo0', url: 'https://www.youtube.com/watch?v=YrxBCBibVo0' },
+  ],
+  'Angular': [
+    { id: 35, title: 'Angular Tutorial for Beginners', channel: 'Programming with Mosh', duration: '2:02:08', views: '2.3M', videoId: 'k5E2AVpwsko', url: 'https://www.youtube.com/watch?v=k5E2AVpwsko' },
+    { id: 36, title: 'Angular Crash Course', channel: 'Traversy Media', duration: '1:11:12', views: '1.5M', videoId: 'Fdf5aTYRW0E', url: 'https://www.youtube.com/watch?v=Fdf5aTYRW0E' },
+  ],
+  'GraphQL': [
+    { id: 37, title: 'GraphQL Tutorial', channel: 'freeCodeCamp', duration: '4:04:54', views: '780K', videoId: 'ed8SzALpx1Q', url: 'https://www.youtube.com/watch?v=ed8SzALpx1Q' },
+    { id: 38, title: 'GraphQL Crash Course', channel: 'Traversy Media', duration: '38:05', views: '560K', videoId: 'BcLNfwF04Kw', url: 'https://www.youtube.com/watch?v=BcLNfwF04Kw' },
+  ],
+  'PostgreSQL': [
+    { id: 39, title: 'PostgreSQL Tutorial', channel: 'freeCodeCamp', duration: '4:11:23', views: '890K', videoId: 'qw--VYLpxG4', url: 'https://www.youtube.com/watch?v=qw--VYLpxG4' },
+    { id: 40, title: 'Learn PostgreSQL', channel: 'Amigoscode', duration: '1:22:03', views: '420K', videoId: 'SpfIwlAYaKk', url: 'https://www.youtube.com/watch?v=SpfIwlAYaKk' },
+  ],
   'General': [
     { id: 18, title: 'Web Development Full Course', channel: 'freeCodeCamp', duration: '21:00:00', views: '5.2M', videoId: 'nu_pCVPKzTk', url: 'https://www.youtube.com/watch?v=nu_pCVPKzTk' },
     { id: 19, title: 'Frontend Developer Roadmap 2024', channel: 'Traversy Media', duration: '45:32', views: '1.8M', videoId: 'UuKdTVVhKGM', url: 'https://www.youtube.com/watch?v=UuKdTVVhKGM' },
@@ -56,6 +97,7 @@ export default function VideosPage() {
   const { theme } = useTheme()
   const { currentRoadmap } = useStore()
   const { user } = useAuth()
+  const router = useRouter()
   const isDark = theme === 'dark'
   const [search, setSearch] = useState('')
   const [selectedTopic, setSelectedTopic] = useState<string>('All')
@@ -114,10 +156,34 @@ export default function VideosPage() {
     return careerLibrary
   }
 
-  // Get user's selected skills
-  const userSkills = userProfile?.skills || []
-  const careerSpecificLibrary = careerGoal ? getCareerVideos(careerGoal) : videoLibrary
-  const roadmapTopics = Object.keys(careerSpecificLibrary).filter(t => t !== 'General')
+  // Get user's actual skills from profile
+  const userSkills = Array.isArray(userProfile?.skills) ? userProfile.skills : []
+  
+  // ONLY show videos for user's actual skills - no fallback
+  const getVideosForSkills = (): Record<string, any[]> => {
+    if (userSkills.length > 0) {
+      // Filter video library by user's actual skills ONLY
+      const skillLibrary: Record<string, any[]> = {}
+      userSkills.forEach(skill => {
+        // Match skill to video library keys (case-insensitive, exact match preferred)
+        Object.keys(videoLibrary).forEach(key => {
+          if (key.toLowerCase() === skill.toLowerCase()) {
+            skillLibrary[key] = videoLibrary[key]
+          } else if (skill.toLowerCase().includes(key.toLowerCase())) {
+            skillLibrary[key] = videoLibrary[key]
+          } else if (key.toLowerCase().includes(skill.toLowerCase())) {
+            skillLibrary[key] = videoLibrary[key]
+          }
+        })
+      })
+      return skillLibrary
+    }
+    // Return empty if no skills - user must add skills first
+    return {}
+  }
+  
+  const careerSpecificLibrary = getVideosForSkills()
+  const roadmapTopics = userSkills.length > 0 ? userSkills : Object.keys(careerSpecificLibrary).filter(t => t !== 'General')
 
   // Get relevant videos based on roadmap or show all
   const getRecommendedVideos = () => {
@@ -230,8 +296,8 @@ export default function VideosPage() {
           </div>
         </motion.div>
 
-        {/* Personalized Banner */}
-        {careerGoal && roadmapTopics.length > 0 && (
+        {/* Personalized Banner or Empty State */}
+        {userSkills.length > 0 ? (
           <motion.div 
             initial={{ opacity: 0, y: 20 }} 
             animate={{ opacity: 1, y: 0 }} 
@@ -241,9 +307,30 @@ export default function VideosPage() {
           >
             <Sparkles className="w-5 h-5" style={{ color: '#00FFE0' }} />
             <p className="text-sm" style={{ color: isDark ? '#ccc' : '#333' }}>
-              <strong style={{ color: '#00FFE0' }}>{careerGoal}</strong> path - Showing videos for: {roadmapTopics.slice(0, 3).join(', ')}
-              {roadmapTopics.length > 3 && ` and ${roadmapTopics.length - 3} more`}
+              Showing videos for your skills: <strong style={{ color: '#00FFE0' }}>{userSkills.slice(0, 3).join(', ')}</strong>
+              {userSkills.length > 3 && ` and ${userSkills.length - 3} more`}
             </p>
+          </motion.div>
+        ) : (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ delay: 0.15 }}
+            className="mb-6 p-6 rounded-xl text-center"
+            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}
+          >
+            <Code2 className="w-12 h-12 mx-auto mb-3" style={{ color: '#EF4444' }} />
+            <h3 className="text-lg font-bold mb-2" style={{ color: isDark ? '#fff' : '#000' }}>No Skills Added Yet</h3>
+            <p className="text-sm mb-4" style={{ color: isDark ? '#aaa' : '#666' }}>
+              Add your skills in Settings to see personalized video recommendations
+            </p>
+            <button
+              onClick={() => router.push('/settings')}
+              className="px-6 py-2.5 rounded-lg font-semibold text-white"
+              style={{ background: 'linear-gradient(135deg, #EF4444, #DC2626)' }}
+            >
+              Go to Settings
+            </button>
           </motion.div>
         )}
 

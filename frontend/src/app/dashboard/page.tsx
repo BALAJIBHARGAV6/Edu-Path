@@ -38,8 +38,34 @@ export default function DashboardPage() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const [loadingRoadmap, setLoadingRoadmap] = useState(true)
-  const [streak, setStreak] = useState(7)
-  const [totalXP, setTotalXP] = useState(1250)
+  const [loadingStats, setLoadingStats] = useState(true)
+  const [streak, setStreak] = useState(0)
+  const [totalXP, setTotalXP] = useState(0)
+  const [userProfile, setUserProfile] = useState<any>(null)
+
+  // Fetch real user stats from database
+  useEffect(() => {
+    async function fetchUserStats() {
+      if (user) {
+        try {
+          // Fetch user profile with stats
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user.id}`)
+          const data = await response.json()
+          
+          if (data.success && data.profile) {
+            setUserProfile(data.profile)
+            setStreak(data.profile.streak_count || 0)
+            setTotalXP(data.profile.total_xp || 0)
+          }
+        } catch (error) {
+          console.error('Error fetching user stats:', error)
+        } finally {
+          setLoadingStats(false)
+        }
+      }
+    }
+    fetchUserStats()
+  }, [user])
 
   useEffect(() => {
     if (!authLoading && !user) {

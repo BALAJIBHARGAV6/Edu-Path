@@ -56,6 +56,8 @@ export default function SettingsPage() {
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user.id}`)
           const data = await response.json()
           
+          console.log('Fetched profile data:', data)
+          
           if (data.success && data.profile) {
             setProfile({
               fullName: data.profile.full_name || '',
@@ -68,18 +70,22 @@ export default function SettingsPage() {
               learningStyle: data.profile.learning_style || 'mixed',
               notifications: true,
             })
-            setSkills(data.profile.skills || [])
-            setUserSkills(data.profile.skills || [])
+            const userSkills = Array.isArray(data.profile.skills) ? data.profile.skills : []
+            console.log('Setting skills:', userSkills)
+            setSkills(userSkills)
+            setUserSkills(userSkills)
           }
         } catch (error) {
           console.error('Error fetching profile:', error)
         } finally {
           setLoadingProfile(false)
         }
+      } else {
+        setLoadingProfile(false)
       }
     }
     fetchProfile()
-  }, [user])
+  }, [user, setUserSkills])
 
   const addSkill = async () => {
     if (newSkill.trim() && !skills.includes(newSkill.trim())) {

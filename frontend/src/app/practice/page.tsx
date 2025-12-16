@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import dynamic from 'next/dynamic'
+import { useRouter } from 'next/navigation'
 import { 
   Code2, Sparkles, CheckCircle2, Clock, ChevronRight, 
   Play, Lightbulb, RotateCcw, Send, TrendingUp, Filter, Loader2, Terminal
@@ -29,6 +30,7 @@ export default function PracticePage() {
   const { theme } = useTheme()
   const { user } = useAuth()
   const { currentRoadmap } = useStore()
+  const router = useRouter()
   const isDark = theme === 'dark'
   const [filter, setFilter] = useState<'all' | 'easy' | 'medium' | 'hard'>('all')
   const [selectedProblem, setSelectedProblem] = useState<any | null>(null)
@@ -82,9 +84,14 @@ export default function PracticePage() {
     return careerMap[career] || ['JavaScript', 'React', 'TypeScript', 'Node.js', 'Python', 'Algorithms']
   }
 
-  // Get user skills from career goal or default
-  const userSkills = careerGoal ? getCareerTopics(careerGoal) : ['JavaScript', 'React', 'TypeScript']
-  const topics = userSkills
+  // Get user's actual skills from profile - ONLY use these, no fallback
+  const userActualSkills = Array.isArray(userProfile?.skills) && userProfile.skills.length > 0 
+    ? userProfile.skills 
+    : []
+  const topics = userActualSkills
+
+  // Only fetch challenges if user has skills
+  const shouldFetchChallenges = userActualSkills.length > 0
 
   // Cache challenges to avoid refetching
   const [challengeCache, setChallengeCache] = useState<Record<string, any[]>>({})
@@ -125,8 +132,13 @@ export default function PracticePage() {
   }
 
   useEffect(() => {
-    fetchChallenges(selectedTopic, filter)
-  }, [selectedTopic, filter])
+    if (shouldFetchChallenges) {
+      fetchChallenges(selectedTopic, filter)
+    } else {
+      setChallenges([])
+      setLoading(false)
+    }
+  }, [selectedTopic, filter, shouldFetchChallenges])
   
   const filteredProblems = challenges
 
@@ -194,7 +206,30 @@ export default function PracticePage() {
     <PageWrapper>
       <div className="min-h-screen pt-16 sm:pt-20 md:pt-24" style={{ background: isDark ? '#0A0A0F' : '#F8FFFE' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {selectedProblem ? (
+          
+          {/* Empty State - No Skills Added */}
+          {!shouldFetchChallenges && !loading && (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+              <div className="p-6 rounded-full mb-6" style={{ background: accent + '15' }}>
+                <Code2 className="w-16 h-16" style={{ color: accent }} />
+              </div>
+              <h2 className="text-3xl font-bold mb-3" style={{ color: text }}>
+                No Skills Added Yet
+              </h2>
+              <p className="text-lg mb-8 max-w-md" style={{ color: muted }}>
+                Add your skills in Settings to get personalized coding challenges tailored to your learning path.
+              </p>
+              <button
+                onClick={() => router.push('/settings')}
+                className="px-8 py-3 rounded-xl font-semibold text-white transition-all hover:scale-105"
+                style={{ background: `linear-gradient(135deg, ${accent} 0%, #7C3AED 100%)` }}
+              >
+                Go to Settings
+              </button>
+            </div>
+          )}
+
+          {shouldFetchChallenges && selectedProblem ? (
             // Problem Solving View
             <div className="max-w-7xl mx-auto">
               <div className="grid lg:grid-cols-2 gap-8 h-[calc(100vh-8rem)]">
@@ -459,7 +494,7 @@ export default function PracticePage() {
           </motion.div>
 
           {/* User Skills Banner */}
-          {userSkills.length > 0 && (
+          {userActualSkills.length > 0 && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
               className="mb-8 p-4 rounded-xl flex items-center gap-3"
               style={{ background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.2)' }}
@@ -468,7 +503,7 @@ export default function PracticePage() {
               <div>
                 <p className="text-sm font-medium" style={{ color: accent }}>Personalized for your skills</p>
                 <p className="text-xs" style={{ color: muted }}>
-                  Showing problems for: {userSkills.join(', ')}
+                  Showing problems for: {userActualSkills.join(', ')}
                 </p>
               </div>
             </motion.div>
