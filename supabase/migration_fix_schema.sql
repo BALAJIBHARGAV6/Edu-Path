@@ -4,7 +4,13 @@
 -- Make full_name nullable to allow profile creation without name initially
 ALTER TABLE user_profiles ALTER COLUMN full_name DROP NOT NULL;
 
--- Add total_xp column if it doesn't exist (for dashboard)
+-- Add missing columns to user_profiles table
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS career_goal TEXT;
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS experience_level TEXT CHECK (experience_level IN ('beginner', 'intermediate', 'advanced'));
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS learning_style TEXT CHECK (learning_style IN ('visual', 'reading', 'hands-on', 'mixed'));
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS learning_pace TEXT;
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS hours_per_week INTEGER DEFAULT 10;
+ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS preferred_content TEXT[] DEFAULT ARRAY['videos', 'articles'];
 ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS total_xp INTEGER DEFAULT 0;
 
 -- Ensure user_skills table exists with correct foreign key
