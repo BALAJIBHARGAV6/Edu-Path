@@ -30,42 +30,42 @@ ALTER TABLE roadmaps ENABLE ROW LEVEL SECURITY;
 -- Create RLS policies for user_profiles
 DROP POLICY IF EXISTS "Users can view own profile" ON user_profiles;
 CREATE POLICY "Users can view own profile" ON user_profiles
-  FOR SELECT USING (auth.uid() = id);
+  FOR SELECT USING (auth.uid() = id OR auth.jwt()->>'role' = 'service_role');
 
 DROP POLICY IF EXISTS "Users can update own profile" ON user_profiles;
 CREATE POLICY "Users can update own profile" ON user_profiles
-  FOR UPDATE USING (auth.uid() = id);
+  FOR UPDATE USING (auth.uid() = id OR auth.jwt()->>'role' = 'service_role');
 
 DROP POLICY IF EXISTS "Users can insert own profile" ON user_profiles;
 CREATE POLICY "Users can insert own profile" ON user_profiles
-  FOR INSERT WITH CHECK (auth.uid() = id);
+  FOR INSERT WITH CHECK (auth.uid() = id OR auth.jwt()->>'role' = 'service_role');
 
 -- Create RLS policies for user_skills
 DROP POLICY IF EXISTS "Users can view own skills" ON user_skills;
 CREATE POLICY "Users can view own skills" ON user_skills
-  FOR SELECT USING (auth.uid() = user_id);
+  FOR SELECT USING (auth.uid() = user_id OR auth.jwt()->>'role' = 'service_role');
 
 DROP POLICY IF EXISTS "Users can insert own skills" ON user_skills;
 CREATE POLICY "Users can insert own skills" ON user_skills
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
+  FOR INSERT WITH CHECK (auth.uid() = user_id OR auth.jwt()->>'role' = 'service_role');
 
 DROP POLICY IF EXISTS "Users can delete own skills" ON user_skills;
 CREATE POLICY "Users can delete own skills" ON user_skills
-  FOR DELETE USING (auth.uid() = user_id);
+  FOR DELETE USING (auth.uid() = user_id OR auth.jwt()->>'role' = 'service_role');
 
 -- Create RLS policies for roadmaps
 DROP POLICY IF EXISTS "Users can view own roadmaps" ON roadmaps;
 CREATE POLICY "Users can view own roadmaps" ON roadmaps
-  FOR SELECT USING (auth.uid() = user_id);
+  FOR SELECT USING (auth.uid() = user_id OR auth.jwt()->>'role' = 'service_role');
 
 DROP POLICY IF EXISTS "Users can insert own roadmaps" ON roadmaps;
 CREATE POLICY "Users can insert own roadmaps" ON roadmaps
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
+  FOR INSERT WITH CHECK (auth.uid() = user_id OR auth.jwt()->>'role' = 'service_role');
 
 DROP POLICY IF EXISTS "Users can update own roadmaps" ON roadmaps;
 CREATE POLICY "Users can update own roadmaps" ON roadmaps
-  FOR UPDATE USING (auth.uid() = user_id);
+  FOR UPDATE USING (auth.uid() = user_id OR auth.jwt()->>'role' = 'service_role');
 
 DROP POLICY IF EXISTS "Users can delete own roadmaps" ON roadmaps;
 CREATE POLICY "Users can delete own roadmaps" ON roadmaps
-  FOR DELETE USING (auth.uid() = user_id);
+  FOR DELETE USING (auth.uid() = user_id OR auth.jwt()->>'role' = 'service_role');
