@@ -44,26 +44,38 @@ export default function LoginPage() {
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
-        const { data: roadmaps, error } = await supabase
-          .from('roadmaps')
+        // First check if user has a profile (completed onboarding)
+        const { data: profile, error: profileError } = await supabase
+          .from('user_profiles')
           .select('*')
-          .eq('user_id', session.user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
+          .eq('id', session.user.id)
+          .single()
         
-        if (!error && roadmaps && roadmaps.length > 0) {
-          setCurrentRoadmap(roadmaps[0])
+        if (!profileError && profile) {
+          console.log('Profile found, checking for roadmap...')
+          // Profile exists, check for roadmap
+          const { data: roadmaps, error } = await supabase
+            .from('roadmaps')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+          
+          if (!error && roadmaps && roadmaps.length > 0) {
+            setCurrentRoadmap(roadmaps[0])
+          }
+          // Always go to dashboard if profile exists, even without roadmap
           router.push('/dashboard')
         } else {
-          console.log('No roadmap found or error:', error)
+          console.log('No profile found, redirecting to onboarding')
           router.push('/onboarding')
         }
       } else {
         router.push('/onboarding')
       }
     } catch (err) {
-      console.error('Error checking roadmap:', err)
-      router.push('/onboarding')
+      console.error('Error checking profile:', err)
+      router.push('/dashboard') // Default to dashboard on error
     } finally {
       setLoading(false)
     }
