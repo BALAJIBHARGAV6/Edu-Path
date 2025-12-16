@@ -28,8 +28,23 @@ export default function OnboardingPage() {
   const { user, loading: authLoading } = useAuth()
   const { theme } = useTheme()
   const isDark = theme === 'dark'
-  const { onboardingStep, setOnboardingStep, onboardingData, updateOnboardingData, setLoading, isLoading, setCurrentRoadmap } = useStore()
+  const { setCurrentRoadmap } = useStore()
   const [step, setStep] = useState(1)
+  const [isLoading, setLoading] = useState(false)
+  
+  // Fresh state - not from Zustand store
+  const [formData, setFormData] = useState({
+    fullName: '',
+    careerGoal: '',
+    experienceLevel: 'beginner' as 'beginner' | 'intermediate' | 'advanced',
+    skills: [] as string[],
+    learningStyle: 'mixed' as 'visual' | 'reading' | 'hands-on' | 'mixed',
+    hoursPerWeek: 10,
+  })
+
+  const updateFormData = (data: Partial<typeof formData>) => {
+    setFormData(prev => ({ ...prev, ...data }))
+  }
 
   const bg = isDark ? '#09090B' : '#FFFFFF'
   const text = isDark ? '#FAFAFA' : '#09090B'
@@ -47,11 +62,11 @@ export default function OnboardingPage() {
 
   const canProceed = () => {
     switch (step) {
-      case 1: return onboardingData.fullName && onboardingData.careerGoal
-      case 2: return onboardingData.experienceLevel
+      case 1: return formData.fullName && formData.careerGoal
+      case 2: return formData.experienceLevel
       case 3: return true // Skills are optional
-      case 4: return onboardingData.learningStyle
-      case 5: return onboardingData.hoursPerWeek > 0
+      case 4: return formData.learningStyle
+      case 5: return formData.hoursPerWeek > 0
       default: return false
     }
   }
@@ -66,36 +81,53 @@ export default function OnboardingPage() {
         throw new Error('No user session found')
       }
 
+      console.log('Starting onboarding submission for user:', session.user.id)
+      console.log('Form data:', formData)
+
       // Save user profile with all onboarding data including skills
       const profileResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: session.user.id,
-          fullName: onboardingData.fullName,
+          fullName: formData.fullName,
           email: session.user.email,
-          careerGoal: onboardingData.careerGoal,
-          experienceLevel: onboardingData.experienceLevel,
-          learningStyle: onboardingData.learningStyle,
-          hoursPerWeek: onboardingData.hoursPerWeek,
-          skills: onboardingData.skills || [],
+          careerGoal: formData.careerGoal,
+          experienceLevel: formData.experienceLevel,
+          learningStyle: formData.learningStyle,
+          hoursPerWeek: formData.hoursPerWeek,
+          skills: formData.skills || [],
         }),
       })
 
+      console.log('Profile response status:', profileResponse.status)
+      
+      if (!profileResponse.ok) {
+        const errorText = await profileResponse.text()
+        console.error('Profile save failed:', errorText)
+        throw new Error(`Failed to save profile: ${errorText}`)
+      }
+
       const profileData = await profileResponse.json()
+      console.log('Profile saved successfully:', profileData)
+      
       if (!profileData.success) {
-        throw new Error('Failed to save profile')
+        throw new Error(profileData.error || 'Failed to save profile')
       }
 
       // Generate roadmap with saved profile data
+      console.log('Generating roadmap...')
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/roadmap/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...onboardingData,
+          ...formData,
           user_id: session.user.id,
         }),
       })
+      
+      console.log('Roadmap response status:', response.status)
+      
       const data = await response.json()
       if (data.success) {
         // Save roadmap to store
@@ -107,9 +139,9 @@ export default function OnboardingPage() {
       } else {
         throw new Error(data.error)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating roadmap:', error)
-      toast.error('Failed to generate roadmap. Please try again.')
+      toast.error(error.message || 'Failed to generate roadmap. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -155,8 +187,8 @@ export default function OnboardingPage() {
                     <label className="block text-sm font-medium mb-2" style={{ color: text }}>Full Name</label>
                     <input
                       type="text"
-                      value={onboardingData.fullName}
-                      onChange={(e) => updateOnboardingData({ fullName: e.target.value })}
+                      value={formData.fullName}
+                      onChange={(e) => updateFormData({ fullName: e.target.value })}
                       placeholder="Enter your name"
                       className="w-full px-4 py-3.5 rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                       style={{ background: subtle, color: text, border: `1px solid ${border}` }}
@@ -169,12 +201,12 @@ export default function OnboardingPage() {
                       {CAREER_GOALS.map((goal) => (
                         <button
                           key={goal}
-                          onClick={() => updateOnboardingData({ careerGoal: goal })}
+                          onClick={() => updateFormData({ careerGoal: goal })}
                           className="p-4 rounded-xl text-left font-medium transition-all"
                           style={{
-                            background: onboardingData.careerGoal === goal ? accent : subtle,
-                            color: onboardingData.careerGoal === goal ? 'white' : text,
-                            border: `1px solid ${onboardingData.careerGoal === goal ? accent : border}`
+                            background: formData.careerGoal === goal ? accent : subtle,
+                            color: formData.careerGoal === goal ? 'white' : text,
+                            border: `1px solid ${formData.careerGoal === goal ? accent : border}`
                           }}
                         >
                           {goal}
@@ -203,16 +235,16 @@ export default function OnboardingPage() {
                   {EXPERIENCE.map((level) => (
                     <button
                       key={level}
-                      onClick={() => updateOnboardingData({ experienceLevel: level as 'beginner' | 'intermediate' | 'advanced' })}
+                      onClick={() => updateFormData({ experienceLevel: level as 'beginner' | 'intermediate' | 'advanced' })}
                       className="w-full p-6 rounded-xl text-left font-medium transition-all flex items-center justify-between"
                       style={{
-                        background: onboardingData.experienceLevel === level ? accent : subtle,
-                        color: onboardingData.experienceLevel === level ? 'white' : text,
-                        border: `1px solid ${onboardingData.experienceLevel === level ? accent : border}`
+                        background: formData.experienceLevel === level ? accent : subtle,
+                        color: formData.experienceLevel === level ? 'white' : text,
+                        border: `1px solid ${formData.experienceLevel === level ? accent : border}`
                       }}
                     >
                       <span>{level}</span>
-                      {onboardingData.experienceLevel === level && <CheckCircle2 className="w-5 h-5" />}
+                      {formData.experienceLevel === level && <CheckCircle2 className="w-5 h-5" />}
                     </button>
                   ))}
                 </div>
@@ -233,7 +265,7 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {(onboardingData.skills || []).map((skill) => (
+                  {(formData.skills || []).map((skill) => (
                     <div
                       key={skill}
                       className="px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2"
@@ -241,8 +273,8 @@ export default function OnboardingPage() {
                     >
                       {skill}
                       <button
-                        onClick={() => updateOnboardingData({ 
-                          skills: (onboardingData.skills || []).filter(s => s !== skill) 
+                        onClick={() => updateFormData({ 
+                          skills: (formData.skills || []).filter(s => s !== skill) 
                         })}
                         className="hover:opacity-70"
                       >
@@ -257,22 +289,22 @@ export default function OnboardingPage() {
                     <button
                       key={skill}
                       onClick={() => {
-                        const currentSkills = onboardingData.skills || []
+                        const currentSkills = formData.skills || []
                         if (currentSkills.includes(skill)) {
-                          updateOnboardingData({ 
+                          updateFormData({ 
                             skills: currentSkills.filter(s => s !== skill) 
                           })
                         } else {
-                          updateOnboardingData({ 
+                          updateFormData({ 
                             skills: [...currentSkills, skill] 
                           })
                         }
                       }}
                       className="p-3 rounded-xl text-sm font-medium transition-all"
                       style={{
-                        background: (onboardingData.skills || []).includes(skill) ? accent : subtle,
-                        color: (onboardingData.skills || []).includes(skill) ? 'white' : text,
-                        border: `1px solid ${(onboardingData.skills || []).includes(skill) ? accent : border}`
+                        background: (formData.skills || []).includes(skill) ? accent : subtle,
+                        color: (formData.skills || []).includes(skill) ? 'white' : text,
+                        border: `1px solid ${(formData.skills || []).includes(skill) ? accent : border}`
                       }}
                     >
                       {skill}
@@ -299,12 +331,12 @@ export default function OnboardingPage() {
                   {LEARNING_STYLES.map((style) => (
                     <button
                       key={style}
-                      onClick={() => updateOnboardingData({ learningStyle: style as 'visual' | 'reading' | 'hands-on' | 'mixed' })}
+                      onClick={() => updateFormData({ learningStyle: style as 'visual' | 'reading' | 'hands-on' | 'mixed' })}
                       className="p-6 rounded-xl text-left font-medium transition-all"
                       style={{
-                        background: onboardingData.learningStyle === style ? accent : subtle,
-                        color: onboardingData.learningStyle === style ? 'white' : text,
-                        border: `1px solid ${onboardingData.learningStyle === style ? accent : border}`
+                        background: formData.learningStyle === style ? accent : subtle,
+                        color: formData.learningStyle === style ? 'white' : text,
+                        border: `1px solid ${formData.learningStyle === style ? accent : border}`
                       }}
                     >
                       {style}
@@ -329,15 +361,15 @@ export default function OnboardingPage() {
 
                 <div className="p-8 rounded-xl" style={{ background: subtle }}>
                   <div className="text-center mb-6">
-                    <div className="text-5xl font-bold mb-2" style={{ color: accent }}>{onboardingData.hoursPerWeek}</div>
+                    <div className="text-5xl font-bold mb-2" style={{ color: accent }}>{formData.hoursPerWeek}</div>
                     <p style={{ color: muted }}>hours per week</p>
                   </div>
                   <input
                     type="range"
                     min="1"
                     max="40"
-                    value={onboardingData.hoursPerWeek}
-                    onChange={(e) => updateOnboardingData({ hoursPerWeek: parseInt(e.target.value) })}
+                    value={formData.hoursPerWeek}
+                    onChange={(e) => updateFormData({ hoursPerWeek: parseInt(e.target.value) })}
                     className="w-full h-3 rounded-lg appearance-none cursor-pointer"
                     style={{ accentColor: accent }}
                   />
