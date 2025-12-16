@@ -8,33 +8,49 @@ router.post('/profile', async (req: Request, res: Response) => {
   try {
     const { id, fullName, email, careerGoal, experienceLevel, learningStyle, learningPace, hoursPerWeek, preferredContent, skills } = req.body;
 
+    console.log('Creating/updating profile for user:', id);
+    console.log('Profile data:', { fullName, email, careerGoal, experienceLevel, learningStyle, hoursPerWeek });
+
     // Upsert user profile
     const { data, error } = await supabaseAdmin
       .from('user_profiles')
       .upsert({
         id,
-        full_name: fullName,
+        full_name: fullName || '',
         email,
         career_goal: careerGoal,
         experience_level: experienceLevel,
         learning_style: learningStyle,
         learning_pace: learningPace,
         hours_per_week: hoursPerWeek,
-        preferred_content: preferredContent,
+        preferred_content: preferredContent || ['videos', 'articles'],
         updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'id'
       })
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error upserting profile:', error);
+      throw error;
+    }
+
+    console.log('Profile saved successfully:', data.id);
 
     // Save skills to user_skills table
     if (skills && Array.isArray(skills) && skills.length > 0) {
+      console.log('Saving skills:', skills);
+      
       // First, delete existing skills for this user
-      await supabaseAdmin
+      const { error: deleteError } = await supabaseAdmin
         .from('user_skills')
         .delete()
         .eq('user_id', id);
+
+      if (deleteError) {
+        console.error('Error deleting old skills:', deleteError);
+      }
 
       // Then insert new skills
       const skillsToInsert = skills.map(skill => ({
@@ -49,13 +65,20 @@ router.post('/profile', async (req: Request, res: Response) => {
 
       if (skillsError) {
         console.error('Error saving skills:', skillsError);
+        // Don't fail the request if skills save fails
+      } else {
+        console.log('Skills saved successfully:', skills.length);
       }
     }
 
     res.json({ success: true, profile: data });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error saving profile:', error);
-    res.status(500).json({ success: false, error: 'Failed to save profile' });
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to save profile',
+      details: error.message || error.toString()
+    });
   }
 });
 

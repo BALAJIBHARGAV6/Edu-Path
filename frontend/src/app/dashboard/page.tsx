@@ -84,14 +84,18 @@ export default function DashboardPage() {
             .order('created_at', { ascending: false })
             .limit(1)
           
-          if (!error && roadmaps && roadmaps.length > 0) {
+          if (error) {
+            console.error('No roadmap found or error:', error)
+            // Don't redirect, show starter concepts instead
+            setLoadingRoadmap(false)
+            return
+          }
+          
+          if (roadmaps && roadmaps.length > 0) {
             setCurrentRoadmap(roadmaps[0])
-          } else {
-            router.push('/onboarding')
           }
         } catch (err) {
           console.error('Error loading roadmap:', err)
-          router.push('/onboarding')
         } finally {
           setLoadingRoadmap(false)
         }
