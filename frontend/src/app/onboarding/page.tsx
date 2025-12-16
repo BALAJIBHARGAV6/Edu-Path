@@ -62,12 +62,38 @@ export default function OnboardingPage() {
       // Get current user session
       const { data: { session } } = await supabase.auth.getSession()
       
+      if (!session?.user?.id) {
+        throw new Error('No user session found')
+      }
+
+      // Save user profile with all onboarding data including skills
+      const profileResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: session.user.id,
+          fullName: onboardingData.fullName,
+          email: session.user.email,
+          careerGoal: onboardingData.careerGoal,
+          experienceLevel: onboardingData.experienceLevel,
+          learningStyle: onboardingData.learningStyle,
+          hoursPerWeek: onboardingData.hoursPerWeek,
+          skills: onboardingData.skills || [],
+        }),
+      })
+
+      const profileData = await profileResponse.json()
+      if (!profileData.success) {
+        throw new Error('Failed to save profile')
+      }
+
+      // Generate roadmap with saved profile data
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/roadmap/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...onboardingData,
-          user_id: session?.user?.id, // Include user ID for saving to database
+          user_id: session.user.id,
         }),
       })
       const data = await response.json()
