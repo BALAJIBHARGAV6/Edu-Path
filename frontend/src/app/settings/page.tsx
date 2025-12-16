@@ -52,12 +52,15 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!user) return
 
+    const userId = user.id
+    const userEmail = user.email
+
     async function fetchProfile() {
       try {
         setLoading(true)
         
-        console.log('[SETTINGS] 🔍 Fetching profile for:', user!.id)
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user!.id}`)
+        console.log('[SETTINGS] 🔍 Fetching profile for:', userId)
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${userId}`)
         
         const data = await response.json()
         console.log('[SETTINGS] 📦 Profile response:', data)
@@ -65,7 +68,7 @@ export default function SettingsPage() {
         if (data.success && data.profile) {
           setProfile({
             fullName: data.profile.full_name || '',
-            email: data.profile.email || user!.email || '',
+            email: data.profile.email || userEmail || '',
           })
           
           setLearning({
