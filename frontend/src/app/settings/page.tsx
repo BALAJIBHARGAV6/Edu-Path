@@ -59,6 +59,9 @@ export default function SettingsPage() {
           console.log('Fetched profile data:', data)
           
           if (data.success && data.profile) {
+            console.log('Profile skills from API:', data.profile.skills)
+            console.log('Skills is Array?', Array.isArray(data.profile.skills))
+            
             setProfile({
               fullName: data.profile.full_name || onboardingData.fullName || '',
               email: data.profile.email || user.email || '',
@@ -71,7 +74,7 @@ export default function SettingsPage() {
               notifications: true,
             })
             const userSkills = Array.isArray(data.profile.skills) ? data.profile.skills : (onboardingData.skills || [])
-            console.log('Setting skills:', userSkills)
+            console.log('Setting skills to state:', userSkills)
             setSkills(userSkills)
             setUserSkills(userSkills)
           } else {

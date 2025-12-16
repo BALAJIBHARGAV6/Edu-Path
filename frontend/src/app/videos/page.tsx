@@ -108,9 +108,12 @@ export default function VideosPage() {
   useEffect(() => {
     async function fetchUserProfile() {
       if (user) {
+        console.log('[Videos] Fetching profile for user:', user.id)
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user.id}`)
         const data = await response.json()
+        console.log('[Videos] Profile response:', data)
         if (data.success && data.profile) {
+          console.log('[Videos] Skills from profile:', data.profile.skills)
           setUserProfile(data.profile)
           setCareerGoal(data.profile.career_goal || '')
         }
@@ -183,22 +186,16 @@ export default function VideosPage() {
   }
   
   const careerSpecificLibrary = getVideosForSkills()
-  const roadmapTopics = userSkills.length > 0 ? userSkills : Object.keys(careerSpecificLibrary).filter(t => t !== 'General')
+  const roadmapTopics = userSkills.length > 0 ? userSkills : []
 
-  // Get relevant videos based on roadmap or show all
+  // Get relevant videos based on user skills ONLY - no fallback to all videos
   const getRecommendedVideos = () => {
     let videos: any[] = []
     
-    if (roadmapTopics.length > 0) {
-      // Get all videos from career-specific library
+    // ONLY show videos if user has skills
+    if (userSkills.length > 0 && Object.keys(careerSpecificLibrary).length > 0) {
+      // Get all videos from skill-specific library
       Object.values(careerSpecificLibrary).forEach(vids => {
-        videos = [...videos, ...vids]
-      })
-    }
-    
-    // If no career-specific videos, show all videos
-    if (videos.length === 0) {
-      Object.values(videoLibrary).forEach(vids => {
         videos = [...videos, ...vids]
       })
     }

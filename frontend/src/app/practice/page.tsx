@@ -53,9 +53,12 @@ export default function PracticePage() {
   useEffect(() => {
     async function fetchUserProfile() {
       if (user) {
+        console.log('[Practice] Fetching profile for user:', user.id)
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user.id}`)
         const data = await response.json()
+        console.log('[Practice] Profile response:', data)
         if (data.success && data.profile) {
+          console.log('[Practice] Skills from profile:', data.profile.skills)
           setUserProfile(data.profile)
           setCareerGoal(data.profile.career_goal || '')
         }
