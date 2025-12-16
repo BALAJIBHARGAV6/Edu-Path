@@ -40,7 +40,8 @@ router.post('/profile', async (req: Request, res: Response) => {
 
     // Save skills to user_skills table
     if (skills && Array.isArray(skills) && skills.length > 0) {
-      console.log('Saving skills:', skills);
+      console.log('[SKILLS_SAVE] Attempting to save skills:', skills);
+      console.log('[SKILLS_SAVE] User ID:', id);
       
       // First, delete existing skills for this user
       const { error: deleteError } = await supabaseAdmin
@@ -49,7 +50,9 @@ router.post('/profile', async (req: Request, res: Response) => {
         .eq('user_id', id);
 
       if (deleteError) {
-        console.error('Error deleting old skills:', deleteError);
+        console.error('[SKILLS_SAVE] Error deleting old skills:', deleteError);
+      } else {
+        console.log('[SKILLS_SAVE] Old skills deleted successfully');
       }
 
       // Then insert new skills
@@ -59,16 +62,23 @@ router.post('/profile', async (req: Request, res: Response) => {
         proficiency_level: experienceLevel || 'beginner',
       }));
 
-      const { error: skillsError } = await supabaseAdmin
+      console.log('[SKILLS_SAVE] Skills to insert:', skillsToInsert);
+
+      const { error: skillsError, data: insertedSkills } = await supabaseAdmin
         .from('user_skills')
-        .insert(skillsToInsert);
+        .insert(skillsToInsert)
+        .select();
 
       if (skillsError) {
-        console.error('Error saving skills:', skillsError);
+        console.error('[SKILLS_SAVE] ❌ Error saving skills:', skillsError);
+        console.error('[SKILLS_SAVE] Error details:', JSON.stringify(skillsError, null, 2));
         // Don't fail the request if skills save fails
       } else {
-        console.log('Skills saved successfully:', skills.length);
+        console.log('[SKILLS_SAVE] ✅ Skills saved successfully:', insertedSkills);
+        console.log('[SKILLS_SAVE] Total skills inserted:', insertedSkills?.length || 0);
       }
+    } else {
+      console.log('[SKILLS_SAVE] No skills provided or empty array');
     }
 
     res.json({ success: true, profile: data });
@@ -97,13 +107,18 @@ router.get('/profile/:userId', async (req: Request, res: Response) => {
     if (error) throw error;
 
     // Get user skills from user_skills table
+    console.log('[SKILLS_FETCH] Fetching skills for user:', userId);
     const { data: skills, error: skillsError } = await supabaseAdmin
       .from('user_skills')
       .select('skill_name')
       .eq('user_id', userId);
 
     if (skillsError) {
-      console.error('Error fetching skills:', skillsError);
+      console.error('[SKILLS_FETCH] ❌ Error fetching skills:', skillsError);
+      console.error('[SKILLS_FETCH] Error details:', JSON.stringify(skillsError, null, 2));
+    } else {
+      console.log('[SKILLS_FETCH] ✅ Skills fetched:', skills);
+      console.log('[SKILLS_FETCH] Total skills count:', skills?.length || 0);
     }
 
     // Add skills array to profile
@@ -112,6 +127,7 @@ router.get('/profile/:userId', async (req: Request, res: Response) => {
       skills: skills ? skills.map(s => s.skill_name) : []
     };
 
+    console.log('[SKILLS_FETCH] Final profile with skills:', profileWithSkills.skills);
     res.json({ success: true, profile: profileWithSkills });
   } catch (error) {
     console.error('Error fetching profile:', error);
