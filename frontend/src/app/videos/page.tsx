@@ -164,9 +164,9 @@ export default function VideosPage() {
     if (userSkills.length > 0) {
       // Filter video library by user's actual skills ONLY
       const skillLibrary: Record<string, any[]> = {}
-      userSkills.forEach(skill => {
+      userSkills.forEach((skill: string) => {
         // Match skill to video library keys (case-insensitive, exact match preferred)
-        Object.keys(videoLibrary).forEach(key => {
+        Object.keys(videoLibrary).forEach((key: string) => {
           if (key.toLowerCase() === skill.toLowerCase()) {
             skillLibrary[key] = videoLibrary[key]
           } else if (skill.toLowerCase().includes(key.toLowerCase())) {
