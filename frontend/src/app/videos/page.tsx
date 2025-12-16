@@ -59,32 +59,70 @@ export default function VideosPage() {
   const isDark = theme === 'dark'
   const [search, setSearch] = useState('')
   const [selectedTopic, setSelectedTopic] = useState<string>('All')
+  const [userProfile, setUserProfile] = useState<any>(null)
+  const [careerGoal, setCareerGoal] = useState<string>('')
+
+  // Fetch user profile to get career goal
+  useEffect(() => {
+    async function fetchUserProfile() {
+      if (user) {
+        const { data } = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user.id}`).then(r => r.json())
+        if (data?.profile) {
+          setUserProfile(data.profile)
+          setCareerGoal(data.profile.career_goal || '')
+        }
+      }
+    }
+    fetchUserProfile()
+  }, [user])
+
+  // Get career-specific topics
+  const getCareerTopics = (career: string): string[] => {
+    const careerMap: Record<string, string[]> = {
+      'Frontend Developer': ['HTML', 'CSS', 'JavaScript', 'React', 'TypeScript', 'Git'],
+      'Backend Developer': ['Node.js', 'Python', 'Java', 'SQL', 'APIs', 'Git'],
+      'Full Stack Developer': ['HTML', 'CSS', 'JavaScript', 'React', 'Node.js', 'TypeScript', 'Git'],
+      'Mobile Developer': ['React Native', 'Flutter', 'Swift', 'Kotlin', 'JavaScript', 'Git'],
+      'DevOps Engineer': ['Docker', 'Kubernetes', 'CI/CD', 'AWS', 'Linux', 'Git'],
+      'Data Scientist': ['Python', 'Machine Learning', 'Pandas', 'NumPy', 'SQL', 'Statistics']
+    }
+    return careerMap[career] || ['HTML', 'CSS', 'JavaScript', 'React', 'Node.js', 'TypeScript', 'Git']
+  }
+
+  // Get career-specific video library
+  const getCareerVideos = (career: string): Record<string, any[]> => {
+    const topics = getCareerTopics(career)
+    const careerLibrary: Record<string, any[]> = {}
+    
+    topics.forEach(topic => {
+      if (videoLibrary[topic]) {
+        careerLibrary[topic] = videoLibrary[topic]
+      }
+    })
+    
+    // Always include general videos
+    careerLibrary['General'] = videoLibrary['General'] || []
+    
+    return careerLibrary
+  }
 
   // Get user's selected skills
-  const userSkills = ['JavaScript', 'React', 'CSS'] // This should come from user settings
-  const roadmapTopics = userSkills
+  const userSkills = userProfile?.skills || []
+  const careerSpecificLibrary = careerGoal ? getCareerVideos(careerGoal) : videoLibrary
+  const roadmapTopics = Object.keys(careerSpecificLibrary).filter(t => t !== 'General')
 
   // Get relevant videos based on roadmap or show all
   const getRecommendedVideos = () => {
     let videos: any[] = []
     
     if (roadmapTopics.length > 0) {
-      // Match videos to roadmap topics
-      const topicKeywords = ['HTML', 'CSS', 'JavaScript', 'React', 'Node.js', 'TypeScript', 'Git']
-      roadmapTopics.forEach((topic: string) => {
-        topicKeywords.forEach(keyword => {
-          if (topic.toLowerCase().includes(keyword.toLowerCase()) && videoLibrary[keyword]) {
-            videos = [...videos, ...videoLibrary[keyword]]
-          }
-        })
+      // Get all videos from career-specific library
+      Object.values(careerSpecificLibrary).forEach(vids => {
+        videos = [...videos, ...vids]
       })
-      // Add general videos if we have some matches
-      if (videos.length > 0 && videos.length < 6) {
-        videos = [...videos, ...videoLibrary['General']]
-      }
     }
     
-    // If no matches or no roadmap, show all videos
+    // If no career-specific videos, show all videos
     if (videos.length === 0) {
       Object.values(videoLibrary).forEach(vids => {
         videos = [...videos, ...vids]
@@ -96,13 +134,13 @@ export default function VideosPage() {
   }
 
   const allVideos = getRecommendedVideos()
-  const topics = ['All', ...Object.keys(videoLibrary)]
+  const topics = ['All', ...Object.keys(careerSpecificLibrary)]
 
   const filteredVideos = allVideos.filter(v => {
     const matchesSearch = v.title.toLowerCase().includes(search.toLowerCase()) || 
                           v.channel.toLowerCase().includes(search.toLowerCase())
     const matchesTopic = selectedTopic === 'All' || 
-                         Object.entries(videoLibrary).some(([topic, vids]) => 
+                         Object.entries(careerSpecificLibrary).some(([topic, vids]) => 
                            topic === selectedTopic && vids.some(vid => vid.id === v.id)
                          )
     return matchesSearch && matchesTopic
@@ -185,7 +223,7 @@ export default function VideosPage() {
         </motion.div>
 
         {/* Personalized Banner */}
-        {roadmapTopics.length > 0 && (
+        {careerGoal && roadmapTopics.length > 0 && (
           <motion.div 
             initial={{ opacity: 0, y: 20 }} 
             animate={{ opacity: 1, y: 0 }} 
@@ -195,7 +233,7 @@ export default function VideosPage() {
           >
             <Sparkles className="w-5 h-5" style={{ color: '#00FFE0' }} />
             <p className="text-sm" style={{ color: isDark ? '#ccc' : '#333' }}>
-              Showing videos related to your learning path: <strong style={{ color: '#00FFE0' }}>{roadmapTopics.slice(0, 3).join(', ')}</strong>
+              <strong style={{ color: '#00FFE0' }}>{careerGoal}</strong> path - Showing videos for: {roadmapTopics.slice(0, 3).join(', ')}
               {roadmapTopics.length > 3 && ` and ${roadmapTopics.length - 3} more`}
             </p>
           </motion.div>

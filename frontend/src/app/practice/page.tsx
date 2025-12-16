@@ -44,14 +44,40 @@ export default function PracticePage() {
   const [running, setRunning] = useState(false)
   const [loading, setLoading] = useState(false)
   const [challenges, setChallenges] = useState<any[]>([])
+  const [userProfile, setUserProfile] = useState<any>(null)
+  const [careerGoal, setCareerGoal] = useState<string>('')
 
-  // Get user skills from roadmap or default
-  const userSkills = currentRoadmap?.ai_generated_path?.milestones
-    ?.flatMap((m: any) => m.skills || [])
-    .filter((skill: string, index: number, self: string[]) => self.indexOf(skill) === index)
-    .slice(0, 5) || ['JavaScript', 'React', 'TypeScript']
+  // Fetch user profile to get career goal
+  useEffect(() => {
+    async function fetchUserProfile() {
+      if (user) {
+        const { data } = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user.id}`).then(r => r.json())
+        if (data?.profile) {
+          setUserProfile(data.profile)
+          setCareerGoal(data.profile.career_goal || '')
+        }
+      }
+    }
+    fetchUserProfile()
+  }, [user])
 
-  // Fetch AI-generated challenges
+  // Get career-specific topics
+  const getCareerTopics = (career: string): string[] => {
+    const careerMap: Record<string, string[]> = {
+      'Frontend Developer': ['JavaScript', 'React', 'TypeScript', 'CSS', 'HTML', 'Algorithms'],
+      'Backend Developer': ['Node.js', 'Python', 'Java', 'Algorithms', 'Database', 'APIs'],
+      'Full Stack Developer': ['JavaScript', 'React', 'Node.js', 'TypeScript', 'Algorithms', 'Database'],
+      'Mobile Developer': ['JavaScript', 'React Native', 'Flutter', 'Algorithms', 'UI/UX'],
+      'DevOps Engineer': ['Python', 'Bash', 'Docker', 'Kubernetes', 'Cloud', 'Algorithms'],
+      'Data Scientist': ['Python', 'Algorithms', 'Statistics', 'Machine Learning', 'Data Structures']
+    }
+    return careerMap[career] || ['JavaScript', 'React', 'TypeScript', 'Node.js', 'Python', 'Algorithms']
+  }
+
+  // Get user skills from career goal or default
+  const userSkills = careerGoal ? getCareerTopics(careerGoal) : ['JavaScript', 'React', 'TypeScript']
+  const topics = userSkills
+
   // Cache challenges to avoid refetching
   const [challengeCache, setChallengeCache] = useState<Record<string, any[]>>({})
   const [submitted, setSubmitted] = useState(false)
@@ -93,8 +119,6 @@ export default function PracticePage() {
   useEffect(() => {
     fetchChallenges(selectedTopic, filter)
   }, [selectedTopic, filter])
-
-  const topics = ['JavaScript', 'React', 'TypeScript', 'Node.js', 'Python', 'CSS', 'Algorithms']
   
   const filteredProblems = challenges
 

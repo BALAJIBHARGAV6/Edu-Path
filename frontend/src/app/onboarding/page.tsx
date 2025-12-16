@@ -16,6 +16,13 @@ const CAREER_GOALS = ['Frontend Developer', 'Backend Developer', 'Full Stack Dev
 const EXPERIENCE: Array<'beginner' | 'intermediate' | 'advanced'> = ['beginner' as const, 'intermediate' as const, 'advanced' as const]
 const LEARNING_STYLES: Array<'visual' | 'reading' | 'hands-on' | 'mixed'> = ['visual' as const, 'reading' as const, 'hands-on' as const, 'mixed' as const]
 
+const COMMON_SKILLS = [
+  'HTML', 'CSS', 'JavaScript', 'TypeScript', 'React', 'Angular', 'Vue.js',
+  'Node.js', 'Python', 'Java', 'C++', 'C#', 'PHP', 'Ruby', 'Go',
+  'SQL', 'MongoDB', 'PostgreSQL', 'MySQL', 'Git', 'Docker', 'Kubernetes',
+  'AWS', 'Azure', 'GCP', 'REST API', 'GraphQL', 'Redux', 'Next.js'
+]
+
 export default function OnboardingPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
@@ -35,15 +42,16 @@ export default function OnboardingPage() {
     if (!authLoading && !user) router.push('/auth/login')
   }, [authLoading, user, router])
 
-  const handleNext = () => setStep(Math.min(step + 1, 4))
+  const handleNext = () => setStep(Math.min(step + 1, 5))
   const handlePrev = () => setStep(Math.max(step - 1, 1))
 
   const canProceed = () => {
     switch (step) {
       case 1: return onboardingData.fullName && onboardingData.careerGoal
       case 2: return onboardingData.experienceLevel
-      case 3: return onboardingData.learningStyle
-      case 4: return onboardingData.hoursPerWeek > 0
+      case 3: return true // Skills are optional
+      case 4: return onboardingData.learningStyle
+      case 5: return onboardingData.hoursPerWeek > 0
       default: return false
     }
   }
@@ -89,12 +97,12 @@ export default function OnboardingPage() {
           {/* Progress */}
           <div className="mb-12">
             <div className="flex justify-between text-sm mb-4">
-              <span style={{ color: text }} className="font-medium">Step {step} of 4</span>
-              <span style={{ color: accent }} className="font-semibold">{step * 25}%</span>
+              <span style={{ color: text }} className="font-medium">Step {step} of 5</span>
+              <span style={{ color: accent }} className="font-semibold">{step * 20}%</span>
             </div>
             <div className="w-full h-2 rounded-full" style={{ background: subtle }}>
               <motion.div
-                animate={{ width: `${step * 25}%` }}
+                animate={{ width: `${step * 20}%` }}
                 className="h-full rounded-full transition-all"
                 style={{ background: accent }}
               />
@@ -185,10 +193,73 @@ export default function OnboardingPage() {
               </motion.div>
             )}
 
-            {/* Step 3 */}
+            {/* Step 3 - Skills */}
             {step === 3 && (
               <motion.div
                 key="step3"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+              >
+                <div className="mb-8">
+                  <h2 className="text-3xl font-bold mb-3" style={{ color: text }}>Previous Skills</h2>
+                  <p style={{ color: muted }}>Select the skills you already have (optional)</p>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {(onboardingData.skills || []).map((skill) => (
+                    <div
+                      key={skill}
+                      className="px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2"
+                      style={{ background: accent, color: 'white' }}
+                    >
+                      {skill}
+                      <button
+                        onClick={() => updateOnboardingData({ 
+                          skills: (onboardingData.skills || []).filter(s => s !== skill) 
+                        })}
+                        className="hover:opacity-70"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {COMMON_SKILLS.map((skill) => (
+                    <button
+                      key={skill}
+                      onClick={() => {
+                        const currentSkills = onboardingData.skills || []
+                        if (currentSkills.includes(skill)) {
+                          updateOnboardingData({ 
+                            skills: currentSkills.filter(s => s !== skill) 
+                          })
+                        } else {
+                          updateOnboardingData({ 
+                            skills: [...currentSkills, skill] 
+                          })
+                        }
+                      }}
+                      className="p-3 rounded-xl text-sm font-medium transition-all"
+                      style={{
+                        background: (onboardingData.skills || []).includes(skill) ? accent : subtle,
+                        color: (onboardingData.skills || []).includes(skill) ? 'white' : text,
+                        border: `1px solid ${(onboardingData.skills || []).includes(skill) ? accent : border}`
+                      }}
+                    >
+                      {skill}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 4 */}
+            {step === 4 && (
+              <motion.div
+                key="step4"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -217,10 +288,10 @@ export default function OnboardingPage() {
               </motion.div>
             )}
 
-            {/* Step 4 */}
-            {step === 4 && (
+            {/* Step 5 */}
+            {step === 5 && (
               <motion.div
-                key="step4"
+                key="step5"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -266,7 +337,7 @@ export default function OnboardingPage() {
               Back
             </button>
 
-            {step < 4 ? (
+            {step < 5 ? (
               <button
                 onClick={handleNext}
                 disabled={!canProceed()}
