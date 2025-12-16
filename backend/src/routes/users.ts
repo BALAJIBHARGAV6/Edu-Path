@@ -8,6 +8,7 @@ router.post('/profile', async (req: Request, res: Response) => {
   try {
     const { id, fullName, email, careerGoal, experienceLevel, learningStyle, learningPace, hoursPerWeek, preferredContent, skills } = req.body;
 
+    // Upsert user profile
     const { data, error } = await supabaseAdmin
       .from('user_profiles')
       .upsert({
@@ -20,13 +21,36 @@ router.post('/profile', async (req: Request, res: Response) => {
         learning_pace: learningPace,
         hours_per_week: hoursPerWeek,
         preferred_content: preferredContent,
-        skills: skills || [],
         updated_at: new Date().toISOString(),
       })
       .select()
       .single();
 
     if (error) throw error;
+
+    // Save skills to user_skills table
+    if (skills && Array.isArray(skills) && skills.length > 0) {
+      // First, delete existing skills for this user
+      await supabaseAdmin
+        .from('user_skills')
+        .delete()
+        .eq('user_id', id);
+
+      // Then insert new skills
+      const skillsToInsert = skills.map(skill => ({
+        user_id: id,
+        skill_name: skill,
+        proficiency_level: experienceLevel || 'beginner',
+      }));
+
+      const { error: skillsError } = await supabaseAdmin
+        .from('user_skills')
+        .insert(skillsToInsert);
+
+      if (skillsError) {
+        console.error('Error saving skills:', skillsError);
+      }
+    }
 
     res.json({ success: true, profile: data });
   } catch (error) {
@@ -40,7 +64,8 @@ router.get('/profile/:userId', async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
 
-    const { data, error } = await supabaseAdmin
+    // Get user profile
+    const { data: profile, error } = await supabaseAdmin
       .from('user_profiles')
       .select('*')
       .eq('id', userId)
@@ -48,7 +73,23 @@ router.get('/profile/:userId', async (req: Request, res: Response) => {
 
     if (error) throw error;
 
-    res.json({ success: true, profile: data });
+    // Get user skills from user_skills table
+    const { data: skills, error: skillsError } = await supabaseAdmin
+      .from('user_skills')
+      .select('skill_name')
+      .eq('user_id', userId);
+
+    if (skillsError) {
+      console.error('Error fetching skills:', skillsError);
+    }
+
+    // Add skills array to profile
+    const profileWithSkills = {
+      ...profile,
+      skills: skills ? skills.map(s => s.skill_name) : []
+    };
+
+    res.json({ success: true, profile: profileWithSkills });
   } catch (error) {
     console.error('Error fetching profile:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch profile' });
@@ -61,16 +102,41 @@ router.put('/profile/:userId/skills', async (req: Request, res: Response) => {
     const { userId } = req.params;
     const { skills } = req.body;
 
-    const { data, error } = await supabaseAdmin
-      .from('user_profiles')
-      .update({ skills, updated_at: new Date().toISOString() })
-      .eq('id', userId)
-      .select()
-      .single();
+    // Delete existing skills
+    await supabaseAdmin
+      .from('user_skills')
+      .delete()
+      .eq('user_id', userId);
 
-    if (error) throw error;
+    // Insert new skills if provided
+    if (skills && Array.isArray(skills) && skills.length > 0) {
+      const skillsToInsert = skills.map(skill => ({
+        user_id: userId,
+        skill_name: skill,
+        proficiency_level: 'beginner',
+      }));
 
-    res.json({ success: true, profile: data });
+      const { error: insertError } = await supabaseAdmin
+        .from('user_skills')
+        .insert(skillsToInsert);
+
+      if (insertError) throw insertError;
+    }
+
+    // Get updated skills
+    const { data: updatedSkills, error: fetchError } = await supabaseAdmin
+      .from('user_skills')
+      .select('skill_name')
+      .eq('user_id', userId);
+
+    if (fetchError) throw fetchError;
+
+    res.json({ 
+      success: true, 
+      profile: { 
+        skills: updatedSkills ? updatedSkills.map(s => s.skill_name) : [] 
+      } 
+    });
   } catch (error) {
     console.error('Error updating skills:', error);
     res.status(500).json({ success: false, error: 'Failed to update skills' });
