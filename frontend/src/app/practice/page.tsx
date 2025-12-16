@@ -513,7 +513,7 @@ export default function PracticePage() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mb-6">
             <h3 className="text-sm font-semibold mb-3" style={{ color: text }}>Topics</h3>
             <div className="flex flex-wrap gap-2">
-              {topics.map((topic) => (
+              {topics.map((topic: string) => (
                 <button
                   key={topic}
                   onClick={() => setSelectedTopic(topic)}
