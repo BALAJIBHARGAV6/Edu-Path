@@ -1,14 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
-  User, Palette, BookOpen, Shield, Save, Camera, Sun, Moon,
-  Bell, Globe, Clock, Zap, Check, Sparkles, Code2, Brain, Target, X, Plus
+  User, Palette, BookOpen, Save, Sun, Moon,
+  Sparkles, Code2, Target, X, Plus, AlertCircle, CheckCircle2, Loader2
 } from 'lucide-react'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
-import { useStore } from '@/lib/store'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import PageWrapper from '@/components/PageWrapper'
@@ -20,135 +19,98 @@ const tabs = [
   { id: 'appearance', label:'Appearance', icon: Palette },
 ]
 
+const popularSkills = ['JavaScript', 'React', 'Node.js', 'TypeScript', 'Python', 'HTML', 'CSS', 'Git', 'MongoDB', 'SQL', 'Docker', 'AWS', 'Redux', 'Vue.js', 'Angular']
+
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme()
-  const { user, loading } = useAuth()
-  const { onboardingData, updateOnboardingData, setUserSkills } = useStore()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const isDark = theme === 'dark'
+  
+  // UI State
   const [activeTab, setActiveTab] = useState('profile')
+  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [loadingProfile, setLoadingProfile] = useState(true)
-
+  
+  // Profile Data
   const [profile, setProfile] = useState({
     fullName: '',
-    email: user?.email || '',
-    careerGoal: '',
-    experienceLevel: 'beginner' as 'beginner' | 'intermediate' | 'advanced',
+    email: '',
   })
-
+  
   const [learning, setLearning] = useState({
     hoursPerWeek: 10,
     learningStyle: 'mixed' as 'visual' | 'reading' | 'hands-on' | 'mixed',
-    notifications: true,
   })
-
+  
   const [skills, setSkills] = useState<string[]>([])
   const [newSkill, setNewSkill] = useState('')
-  
-  const popularSkills = ['Git', 'MongoDB', 'SQL', 'Docker', 'AWS', 'Redux', 'Vue.js', 'Angular', 'GraphQL', 'PostgreSQL']
+  const [addingSkill, setAddingSkill] = useState(false)
+  const [removingSkill, setRemovingSkill] = useState<string | null>(null)
 
-  // Fetch user profile on load
+  // Fetch user profile and skills
   useEffect(() => {
+    if (!user) return
+
     async function fetchProfile() {
-      if (user) {
-        try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user.id}`)
-          const data = await response.json()
-          
-          console.log('Fetched profile data:', data)
-          
-          if (data.success && data.profile) {
-            console.log('Profile skills from API:', data.profile.skills)
-            console.log('Skills is Array?', Array.isArray(data.profile.skills))
-            
-            setProfile({
-              fullName: data.profile.full_name || onboardingData.fullName || '',
-              email: data.profile.email || user.email || '',
-              careerGoal: data.profile.career_goal || onboardingData.careerGoal || '',
-              experienceLevel: data.profile.experience_level || onboardingData.experienceLevel || 'beginner',
-            })
-            setLearning({
-              hoursPerWeek: data.profile.hours_per_week || onboardingData.hoursPerWeek || 10,
-              learningStyle: data.profile.learning_style || onboardingData.learningStyle || 'mixed',
-              notifications: true,
-            })
-            const userSkills = Array.isArray(data.profile.skills) ? data.profile.skills : (onboardingData.skills || [])
-            console.log('Setting skills to state:', userSkills)
-            setSkills(userSkills)
-            setUserSkills(userSkills)
-          } else {
-            // Profile doesn't exist - use onboarding data as fallback
-            console.log('No profile found, using onboarding data')
-            setProfile({
-              fullName: onboardingData.fullName || '',
-              email: user.email || '',
-              careerGoal: onboardingData.careerGoal || '',
-              experienceLevel: onboardingData.experienceLevel || 'beginner',
-            })
-            setLearning({
-              hoursPerWeek: onboardingData.hoursPerWeek || 10,
-              learningStyle: onboardingData.learningStyle || 'mixed',
-              notifications: true,
-            })
-            setSkills(onboardingData.skills || [])
-            setUserSkills(onboardingData.skills || [])
-          }
-        } catch (error) {
-          console.error('Error fetching profile:', error)
-          // Fallback to onboarding data on error
+      try {
+        setLoading(true)
+        
+        console.log('[SETTINGS] 🔍 Fetching profile for:', user.id)
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user.id}`)
+        
+        const data = await response.json()
+        console.log('[SETTINGS] 📦 Profile response:', data)
+        
+        if (data.success && data.profile) {
           setProfile({
-            fullName: onboardingData.fullName || '',
-            email: user.email || '',
-            careerGoal: onboardingData.careerGoal || '',
-            experienceLevel: onboardingData.experienceLevel || 'beginner',
+            fullName: data.profile.full_name || '',
+            email: data.profile.email || user.email || '',
           })
-          setSkills(onboardingData.skills || [])
-          setUserSkills(onboardingData.skills || [])
-        } finally {
-          setLoadingProfile(false)
+          
+          setLearning({
+            hoursPerWeek: data.profile.hours_per_week || 10,
+            learningStyle: data.profile.learning_style || 'mixed',
+          })
+          
+          const profileSkills = data.profile.skills
+          console.log('[SETTINGS] 🎯 Skills from API:', profileSkills)
+          
+          if (Array.isArray(profileSkills)) {
+            setSkills(profileSkills)
+            console.log('[SETTINGS] ✅ Loaded', profileSkills.length, 'skills')
+          } else {
+            console.warn('[SETTINGS] ⚠️ Skills not array, using empty')
+            setSkills([])
+          }
         }
-      } else {
-        setLoadingProfile(false)
+      } catch (err) {
+        console.error('[SETTINGS] ❌ Error:', err)
+        toast.error('Failed to load profile')
+      } finally {
+        setLoading(false)
       }
     }
+
     fetchProfile()
-  }, [user, setUserSkills, onboardingData])
+  }, [user])
 
+  // Add skill
   const addSkill = async () => {
-    if (newSkill.trim() && !skills.includes(newSkill.trim())) {
-      const updatedSkills = [...skills, newSkill.trim()]
-      setSkills(updatedSkills)
-      setNewSkill('')
-      
-      // Save to backend immediately
-      await saveSkills(updatedSkills)
-      toast.success(`Added ${newSkill.trim()} to your skills!`)
-    }
-  }
-
-  const removeSkill = async (skill: string) => {
-    const updatedSkills = skills.filter(s => s !== skill)
-    setSkills(updatedSkills)
+    const skillToAdd = newSkill.trim()
     
-    // Save to backend immediately
-    await saveSkills(updatedSkills)
-    toast.success(`Removed ${skill} from your skills!`)
-  }
-
-  const addPopularSkill = async (skill: string) => {
-    if (!skills.includes(skill)) {
-      const updatedSkills = [...skills, skill]
-      setSkills(updatedSkills)
-      
-      // Save to backend immediately
-      await saveSkills(updatedSkills)
-      toast.success(`Added ${skill} to your skills!`)
+    if (!skillToAdd) return
+    if (skills.includes(skillToAdd)) {
+      toast.error('Already have this skill')
+      return
     }
-  }
 
-  const saveSkills = async (updatedSkills: string[]) => {
     try {
+      setAddingSkill(true)
+      const updatedSkills = [...skills, skillToAdd]
+      
+      console.log('[SETTINGS] ➕ Adding:', skillToAdd)
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user?.id}/skills`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -156,25 +118,57 @@ export default function SettingsPage() {
       })
       
       const data = await response.json()
+      console.log('[SETTINGS] 💾 Add response:', data)
+      
       if (data.success) {
-        // Update global store so other pages refresh
-        setUserSkills(updatedSkills)
-        // Force reload to update other pages
+        setSkills(updatedSkills)
+        setNewSkill('')
+        toast.success(`✅ Added ${skillToAdd}!`)
         window.dispatchEvent(new Event('skillsUpdated'))
+      } else {
+        throw new Error(data.error)
       }
-    } catch (error) {
-      console.error('Error saving skills:', error)
-      toast.error('Failed to save skills')
+    } catch (err: any) {
+      console.error('[SETTINGS] ❌ Add error:', err)
+      toast.error('Failed to add skill')
+    } finally {
+      setAddingSkill(false)
     }
   }
 
-  useEffect(() => {
-    if (!loading && !user) router.push('/auth/login')
-  }, [loading, user, router])
-
-  const handleSave = async () => {
-    setSaving(true)
+  // Remove skill
+  const removeSkill = async (skillToRemove: string) => {
     try {
+      setRemovingSkill(skillToRemove)
+      const updatedSkills = skills.filter(s => s !== skillToRemove)
+      
+      console.log('[SETTINGS] ➖ Removing:', skillToRemove)
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user?.id}/skills`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ skills: updatedSkills })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        setSkills(updatedSkills)
+        toast.success(`❌ Removed ${skillToRemove}`)
+        window.dispatchEvent(new Event('skillsUpdated'))
+      }
+    } catch (err) {
+      toast.error('Failed to remove')
+    } finally {
+      setRemovingSkill(null)
+    }
+  }
+
+  // Save profile
+  const handleSave = async () => {
+    try {
+      setSaving(true)
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -182,8 +176,6 @@ export default function SettingsPage() {
           id: user?.id,
           fullName: profile.fullName,
           email: profile.email,
-          careerGoal: profile.careerGoal,
-          experienceLevel: profile.experienceLevel,
           learningStyle: learning.learningStyle,
           hoursPerWeek: learning.hoursPerWeek,
           skills
@@ -191,347 +183,173 @@ export default function SettingsPage() {
       })
       
       const data = await response.json()
+      
       if (data.success) {
-        updateOnboardingData({ 
-          fullName: profile.fullName, 
-          hoursPerWeek: learning.hoursPerWeek, 
-          learningStyle: learning.learningStyle 
-        })
-        toast.success('Settings saved successfully!')
-        // Trigger update event for other pages
+        toast.success('✅ Saved!')
         window.dispatchEvent(new Event('skillsUpdated'))
-      } else {
-        toast.error('Failed to save settings')
       }
-    } catch (error) {
-      console.error('Error saving settings:', error)
-      toast.error('Failed to save settings')
+    } catch (err) {
+      toast.error('Failed to save')
     } finally {
       setSaving(false)
     }
   }
 
-  if (loading || !user) {
+  useEffect(() => {
+    if (!authLoading && !user) router.push('/auth/login')
+  }, [authLoading, user, router])
+
+  if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: isDark ? '#0A0A0F' : '#FAFAFA' }}>
-        <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#00F771', borderTopColor: 'transparent' }} />
-      </div>
+      <PageWrapper>
+        <div className="min-h-screen flex items-center justify-center" style={{ background: isDark ? '#0A0A0F' : '#FAFAFA' }}>
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#2563EB' }} />
+        </div>
+      </PageWrapper>
     )
   }
 
-  const bg = isDark ? '#09090B' : '#FFFFFF'
   const text = isDark ? '#FAFAFA' : '#09090B'
   const muted = isDark ? '#A1A1AA' : '#71717A'
-  const subtle = isDark ? '#18181B' : '#F4F4F5'
   const border = isDark ? '#27272A' : '#E4E4E7'
   const accent = '#2563EB'
 
   return (
     <PageWrapper>
-      <div className="min-h-screen pt-16 sm:pt-20 md:pt-24" style={{ background: isDark ? '#0A0A0F' : '#F8FFFE' }}>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Hero Section - EXACT Same as Home Page */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-16">
-            {/* Badge - EXACT Same Style */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-6"
-              style={{ 
-                background: 'rgba(37,99,235,0.1)',
-                border: '1px solid rgba(37,99,235,0.2)'
-              }}
-            >
-              <Sparkles className="w-4 h-4" style={{ color: accent }} />
-              <span className="text-sm font-medium" style={{ color: accent }}>Account Settings</span>
-            </motion.div>
-            
-            {/* Main Heading - EXACT Same Style */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6" style={{ color: text }}>
-              Customize your <GradientText>learning experience</GradientText>
+      <div className="min-h-screen pt-24" style={{ background: isDark ? '#0A0A0F' : '#F8FFFE' }}>
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
+            <h1 className="text-5xl font-bold mb-4" style={{ color: text }}>
+              Customize <GradientText>Settings</GradientText>
             </h1>
-            
-            {/* Description - EXACT Same Style */}
-            <p className="text-lg sm:text-xl leading-relaxed max-w-3xl mx-auto mb-8" style={{ color: muted }}>
-              Manage your skills, preferences, and account settings to get personalized content across all pages.
-            </p>
           </motion.div>
 
           <div className="grid lg:grid-cols-4 gap-6">
-            {/* Tabs */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-              className="lg:col-span-1 space-y-1"
-            >
+            <div className="lg:col-span-1 space-y-1">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-medium transition-all"
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all"
                   style={{ 
-                    background: activeTab === tab.id ? 'rgba(0,247,113,0.15)' : 'transparent',
-                    color: activeTab === tab.id ? '#00F771' : (isDark ? '#888' : '#666')
+                    background: activeTab === tab.id ? 'rgba(37,99,235,0.15)' : 'transparent',
+                    color: activeTab === tab.id ? accent : muted
                   }}
                 >
                   <tab.icon className="w-4 h-4" />
                   {tab.label}
                 </button>
               ))}
-            </motion.div>
+            </div>
 
-            {/* Content */}
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-              className="lg:col-span-3 rounded-2xl p-6" style={{ background: isDark ? 'rgba(20,20,25,0.8)' : 'rgba(255,255,255,0.9)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` }}
-            >
+            <div className="lg:col-span-3 rounded-2xl p-6" style={{ 
+              background: isDark ? 'rgba(20,20,25,0.9)' : 'rgba(255,255,255,0.9)', 
+              border: `1px solid ${border}`
+            }}>
               {activeTab === 'profile' && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-bold" style={{ color: text }}>Profile Settings</h2>
+                  <h2 className="text-2xl font-bold" style={{ color: text }}>Profile</h2>
                   
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: text }}>Full Name</label>
-                    <input
-                      type="text"
-                      value={profile.fullName}
-                      onChange={(e) => setProfile(prev => ({ ...prev, fullName: e.target.value }))}
-                      className="w-full p-3 rounded-xl text-sm outline-none"
-                      style={{ 
-                        background: isDark ? '#0A0A0F' : '#FAFAFA',
-                        border: '1px solid ' + border,
-                        color: text
-                      }}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{ color: text }}>Email</label>
-                    <input
-                      type="email"
-                      value={profile.email}
-                      onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full p-3 rounded-xl text-sm outline-none"
-                      style={{ 
-                        background: isDark ? '#0A0A0F' : '#FAFAFA',
-                        border: '1px solid ' + border,
-                        color: text
-                      }}
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    value={profile.fullName}
+                    onChange={(e) => setProfile(p => ({ ...p, fullName: e.target.value }))}
+                    placeholder="Full Name"
+                    className="w-full p-3 rounded-xl"
+                    style={{ background: isDark ? '#0A0A0F' : '#FAFAFA', border: '1px solid ' + border, color: text }}
+                  />
 
                   <div>
-                    <label className="block text-sm font-medium mb-3" style={{ color: text }}>Your Skills & Stack</label>
-                    <p className="text-xs mb-4" style={{ color: muted }}>
-                      Adding skills will automatically update content across Practice, Resources, and Videos pages
-                    </p>
+                    <div className="flex justify-between mb-3">
+                      <label className="font-bold flex items-center gap-2" style={{ color: text }}>
+                        <Code2 className="w-4 h-4" />
+                        Skills
+                      </label>
+                      <span className="text-xs px-2 py-1 rounded-full" style={{ background: 'rgba(37,99,235,0.1)', color: accent }}>
+                        {skills.length}
+                      </span>
+                    </div>
                     
-                    {loadingProfile ? (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: accent }} />
+                    {skills.length > 0 ? (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {skills.map((skill) => (
+                          <span key={skill} className="px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2" style={{ background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)', color: 'white' }}>
+                            <CheckCircle2 className="w-3 h-3" />
+                            {skill}
+                            <button onClick={() => removeSkill(skill)} disabled={removingSkill === skill} className="w-4 h-4 bg-white/20 rounded-full flex items-center justify-center">
+                              {removingSkill === skill ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                            </button>
+                          </span>
+                        ))}
                       </div>
                     ) : (
-                      <>
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {skills.map((skill, index) => (
-                            <motion.span
-                              key={index}
-                              initial={{ opacity: 0, scale: 0.8 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              className="px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2"
-                              style={{
-                                background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
-                                color: 'white'
-                              }}
-                            >
-                              {skill}
-                              <button
-                                onClick={() => removeSkill(skill)}
-                                className="w-4 h-4 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </motion.span>
-                          ))}
-                        </div>
-                        
-                        <div className="flex gap-2 mb-4">
-                          <input
-                            type="text"
-                            value={newSkill}
-                            onChange={(e) => setNewSkill(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && addSkill()}
-                            placeholder="Add a skill (e.g., React, Python, Node.js)"
-                            className="flex-1 p-3 rounded-xl text-sm outline-none"
-                            style={{ 
-                              background: isDark ? '#0A0A0F' : '#FAFAFA',
-                              border: '1px solid ' + border,
-                              color: text
-                            }}
-                          />
-                          <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={addSkill}
-                            className="px-6 py-3 rounded-xl font-semibold text-white transition-all flex items-center gap-2"
-                            style={{
-                              background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)'
-                            }}
-                          >
-                            <Plus className="w-4 h-4" />
-                            Add
-                          </motion.button>
-                        </div>
-
-                        <div>
-                          <p className="text-sm font-medium mb-2" style={{ color: text }}>Popular Skills</p>
-                          <div className="flex flex-wrap gap-2">
-                            {popularSkills.filter(skill => !skills.includes(skill)).map((skill) => (
-                              <motion.button
-                                key={skill}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => addPopularSkill(skill)}
-                                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1"
-                                style={{
-                                  background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-                                  color: muted,
-                                  border: '1px solid ' + border
-                                }}
-                              >
-                                <Plus className="w-3 h-3" />
-                                {skill}
-                              </motion.button>
-                            ))}
-                          </div>
-                        </div>
-                      </>
+                      <div className="mb-4 p-4 rounded-xl text-center" style={{ background: 'rgba(239,68,68,0.1)' }}>
+                        <AlertCircle className="w-8 h-8 mx-auto mb-2" style={{ color: '#EF4444' }} />
+                        <p className="text-sm" style={{ color: '#EF4444' }}>No skills yet</p>
+                      </div>
                     )}
+                    
+                    <div className="flex gap-2 mb-4">
+                      <input
+                        type="text"
+                        value={newSkill}
+                        onChange={(e) => setNewSkill(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && addSkill()}
+                        placeholder="Add skill..."
+                        className="flex-1 p-3 rounded-xl"
+                        style={{ background: isDark ? '#0A0A0F' : '#FAFAFA', border: '1px solid ' + border, color: text }}
+                      />
+                      <button onClick={addSkill} disabled={addingSkill} className="px-6 py-3 rounded-xl font-semibold text-white flex items-center gap-2" style={{ background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)' }}>
+                        {addingSkill ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                        Add
+                      </button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {popularSkills.filter(s => !skills.includes(s)).slice(0, 8).map((skill) => (
+                        <button key={skill} onClick={() => { setNewSkill(skill); addSkill(); setNewSkill('') }} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', color: muted }}>
+                          <Plus className="w-3 h-3 inline mr-1" />{skill}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
 
               {activeTab === 'learning' && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-bold" style={{ color: text }}>Learning Preferences</h2>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-3" style={{ color: text }}>Learning Style</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {(['visual', 'reading', 'hands-on', 'mixed'] as const).map((style) => (
-                        <motion.button
-                          key={style}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => setLearning(prev => ({ ...prev, learningStyle: style }))}
-                          className="p-4 rounded-xl text-sm font-semibold transition-all"
-                          style={{
-                            background: learning.learningStyle === style 
-                              ? 'linear-gradient(135deg, #3B82F6, #1D4ED8)' 
-                              : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'),
-                            color: learning.learningStyle === style ? '#fff' : text,
-                            border: '1px solid ' + (learning.learningStyle === style ? '#3B82F6' : border)
-                          }}
-                        >
-                          {style.charAt(0).toUpperCase() + style.slice(1)}
-                        </motion.button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-3" style={{ color: text }}>Study Hours per Week</label>
-                    <div className="grid grid-cols-4 gap-3">
-                      {[5, 10, 15, 20].map((hours) => (
-                        <motion.button
-                          key={hours}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => setLearning(prev => ({ ...prev, hoursPerWeek: hours }))}
-                          className="p-4 rounded-xl text-sm font-semibold transition-all"
-                          style={{
-                            background: learning.hoursPerWeek === hours 
-                              ? 'linear-gradient(135deg, #10B981, #059669)' 
-                              : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'),
-                            color: learning.hoursPerWeek === hours ? '#fff' : text,
-                            border: '1px solid ' + (learning.hoursPerWeek === hours ? '#10B981' : border)
-                          }}
-                        >
-                          {hours}h
-                        </motion.button>
-                      ))}
-                    </div>
+                  <h2 className="text-2xl font-bold" style={{ color: text }}>Learning</h2>
+                  <div className="grid grid-cols-2 gap-3">
+                    {(['visual', 'reading', 'hands-on', 'mixed'] as const).map((style) => (
+                      <button key={style} onClick={() => setLearning(p => ({ ...p, learningStyle: style }))} className="p-4 rounded-xl font-semibold" style={{ background: learning.learningStyle === style ? 'linear-gradient(135deg, #3B82F6, #1D4ED8)' : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'), color: learning.learningStyle === style ? '#fff' : text }}>
+                        {style}
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
 
               {activeTab === 'appearance' && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-bold" style={{ color: text }}>Appearance</h2>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-3" style={{ color: text }}>Theme</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => !isDark && toggleTheme()}
-                        className="p-4 rounded-xl text-sm font-semibold transition-all flex items-center gap-3"
-                        style={{
-                          background: !isDark 
-                            ? 'linear-gradient(135deg, #F59E0B, #D97706)' 
-                            : 'rgba(255,255,255,0.05)',
-                          color: !isDark ? '#fff' : text,
-                          border: '1px solid ' + (!isDark ? '#F59E0B' : border)
-                        }}
-                      >
-                        <Sun className="w-5 h-5" />
-                        Light Mode
-                      </motion.button>
-                      
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => isDark && toggleTheme()}
-                        className="p-4 rounded-xl text-sm font-semibold transition-all flex items-center gap-3"
-                        style={{
-                          background: isDark 
-                            ? 'linear-gradient(135deg, #6366F1, #4F46E5)' 
-                            : 'rgba(0,0,0,0.05)',
-                          color: isDark ? '#fff' : text,
-                          border: '1px solid ' + (isDark ? '#6366F1' : border)
-                        }}
-                      >
-                        <Moon className="w-5 h-5" />
-                        Dark Mode
-                      </motion.button>
-                    </div>
-                  </div>
-
-                  <div className="mt-8 p-6 rounded-xl" style={{ background: isDark ? 'rgba(0,247,113,0.1)' : 'rgba(0,247,113,0.05)', border: '1px solid rgba(0,247,113,0.2)' }}>
-                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: '#00F771' }}>
-                      <Target className="w-5 h-5" />
-                      How Progress Updates Work
-                    </h3>
-                    <div className="space-y-3 text-sm" style={{ color: text }}>
-                      <p>🎯 <strong>Click concepts on Dashboard</strong> to mark them complete</p>
-                      <p>📊 <strong>Progress bar updates automatically</strong> showing your completion percentage</p>
-                      <p>🔓 <strong>Next concepts unlock</strong> as you complete previous ones</p>
-                      <p>🎉 <strong>Toast notifications</strong> celebrate your achievements</p>
-                      <p>📈 <strong>Stats update in real-time</strong> across all pages</p>
-                      <p>🎮 <strong>Practice problems</strong> and videos filter based on your skills</p>
-                    </div>
+                  <h2 className="text-2xl font-bold" style={{ color: text }}>Appearance</h2>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button onClick={() => !isDark && toggleTheme()} className="p-6 rounded-xl font-semibold flex items-center justify-center gap-3" style={{ background: !isDark ? 'linear-gradient(135deg, #F59E0B, #D97706)' : 'rgba(255,255,255,0.05)', color: !isDark ? '#fff' : text }}>
+                      <Sun className="w-5 h-5" />Light
+                    </button>
+                    <button onClick={() => isDark && toggleTheme()} className="p-6 rounded-xl font-semibold flex items-center justify-center gap-3" style={{ background: isDark ? 'linear-gradient(135deg, #6366F1, #4F46E5)' : 'rgba(0,0,0,0.05)', color: isDark ? '#fff' : text }}>
+                      <Moon className="w-5 h-5" />Dark
+                    </button>
                   </div>
                 </div>
               )}
 
-              {/* Save Button */}
-              <div className="mt-8 pt-6 border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }}>
-                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleSave} disabled={saving}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-black"
-                  style={{ background: 'linear-gradient(135deg, #00F771, #00D4AA)' }}
-                >
-                  {saving ? <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#000', borderTopColor: 'transparent' }} /> : <Save className="w-4 h-4" />}
-                  Save Changes
-                </motion.button>
+              <div className="mt-8 pt-6 border-t" style={{ borderColor: border }}>
+                <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white" style={{ background: 'linear-gradient(135deg, #10B981, #059669)' }}>
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Save
+                </button>
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </div>
