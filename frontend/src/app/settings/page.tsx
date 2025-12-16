@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { 
   User, Palette, BookOpen, Shield, Save, Camera, Sun, Moon,
-  Bell, Globe, Clock, Zap, Check, Sparkles, Code2, Brain, Target
+  Bell, Globe, Clock, Zap, Check, Sparkles, Code2, Brain, Target, X, Plus
 } from 'lucide-react'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
@@ -23,40 +23,115 @@ const tabs = [
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme()
   const { user, loading } = useAuth()
-  const { onboardingData, updateOnboardingData } = useStore()
+  const { onboardingData, updateOnboardingData, setUserSkills } = useStore()
   const router = useRouter()
   const isDark = theme === 'dark'
   const [activeTab, setActiveTab] = useState('profile')
   const [saving, setSaving] = useState(false)
+  const [loadingProfile, setLoadingProfile] = useState(true)
 
   const [profile, setProfile] = useState({
-    fullName: onboardingData.fullName || '',
+    fullName: '',
     email: user?.email || '',
-    bio: '',
+    careerGoal: '',
+    experienceLevel: 'beginner' as 'beginner' | 'intermediate' | 'advanced',
   })
 
   const [learning, setLearning] = useState({
-    hoursPerWeek: onboardingData.hoursPerWeek || 10,
-    learningStyle: onboardingData.learningStyle || 'mixed',
+    hoursPerWeek: 10,
+    learningStyle: 'mixed' as 'visual' | 'reading' | 'hands-on' | 'mixed',
     notifications: true,
   })
 
-  const { userSkills, addUserSkill, removeUserSkill } = useStore()
+  const [skills, setSkills] = useState<string[]>([])
   const [newSkill, setNewSkill] = useState('')
   
-  const popularSkills = ['JavaScript', 'React', 'Python', 'Node.js', 'TypeScript', 'CSS', 'HTML', 'Git', 'MongoDB', 'SQL']
+  const popularSkills = ['Git', 'MongoDB', 'SQL', 'Docker', 'AWS', 'Redux', 'Vue.js', 'Angular', 'GraphQL', 'PostgreSQL']
 
-  const addSkill = () => {
-    if (newSkill.trim() && !userSkills.includes(newSkill.trim())) {
-      addUserSkill(newSkill.trim())
+  // Fetch user profile on load
+  useEffect(() => {
+    async function fetchProfile() {
+      if (user) {
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user.id}`)
+          const data = await response.json()
+          
+          if (data.success && data.profile) {
+            setProfile({
+              fullName: data.profile.full_name || '',
+              email: data.profile.email || user.email || '',
+              careerGoal: data.profile.career_goal || '',
+              experienceLevel: data.profile.experience_level || 'beginner',
+            })
+            setLearning({
+              hoursPerWeek: data.profile.hours_per_week || 10,
+              learningStyle: data.profile.learning_style || 'mixed',
+              notifications: true,
+            })
+            setSkills(data.profile.skills || [])
+            setUserSkills(data.profile.skills || [])
+          }
+        } catch (error) {
+          console.error('Error fetching profile:', error)
+        } finally {
+          setLoadingProfile(false)
+        }
+      }
+    }
+    fetchProfile()
+  }, [user])
+
+  const addSkill = async () => {
+    if (newSkill.trim() && !skills.includes(newSkill.trim())) {
+      const updatedSkills = [...skills, newSkill.trim()]
+      setSkills(updatedSkills)
       setNewSkill('')
+      
+      // Save to backend immediately
+      await saveSkills(updatedSkills)
       toast.success(`Added ${newSkill.trim()} to your skills!`)
     }
   }
 
-  const removeSkill = (skill: string) => {
-    removeUserSkill(skill)
+  const removeSkill = async (skill: string) => {
+    const updatedSkills = skills.filter(s => s !== skill)
+    setSkills(updatedSkills)
+    
+    // Save to backend immediately
+    await saveSkills(updatedSkills)
     toast.success(`Removed ${skill} from your skills!`)
+  }
+
+  const addPopularSkill = async (skill: string) => {
+    if (!skills.includes(skill)) {
+      const updatedSkills = [...skills, skill]
+      setSkills(updatedSkills)
+      
+      // Save to backend immediately
+      await saveSkills(updatedSkills)
+      toast.success(`Added ${skill} to your skills!`)
+    }
+  }
+
+  const saveSkills = async (updatedSkills: string[]) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user?.id}/skills`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ skills: updatedSkills })
+      })
+      
+      const data = await response.json()
+      if (data.success) {
+        // Update global store so other pages refresh
+        setUserSkills(updatedSkills)
+        // Force reload to update other pages
+        window.dispatchEvent(new Event('skillsUpdated'))
+      }
+    } catch (error) {
+      console.error('Error saving skills:', error)
+      toast.error('Failed to save skills')
+    }
   }
 
   useEffect(() => {
@@ -65,10 +140,41 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     setSaving(true)
-    await new Promise(r => setTimeout(r, 1000))
-    updateOnboardingData({ fullName: profile.fullName, hoursPerWeek: learning.hoursPerWeek, learningStyle: learning.learningStyle as any })
-    toast.success('Settings saved!')
-    setSaving(false)
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: user?.id,
+          fullName: profile.fullName,
+          email: profile.email,
+          careerGoal: profile.careerGoal,
+          experienceLevel: profile.experienceLevel,
+          learningStyle: learning.learningStyle,
+          hoursPerWeek: learning.hoursPerWeek,
+          skills
+        })
+      })
+      
+      const data = await response.json()
+      if (data.success) {
+        updateOnboardingData({ 
+          fullName: profile.fullName, 
+          hoursPerWeek: learning.hoursPerWeek, 
+          learningStyle: learning.learningStyle 
+        })
+        toast.success('Settings saved successfully!')
+        // Trigger update event for other pages
+        window.dispatchEvent(new Event('skillsUpdated'))
+      } else {
+        toast.error('Failed to save settings')
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error)
+      toast.error('Failed to save settings')
+    } finally {
+      setSaving(false)
+    }
   }
 
   if (loading || !user) {
@@ -181,70 +287,88 @@ export default function SettingsPage() {
                     <p className="text-xs mb-4" style={{ color: muted }}>
                       Adding skills will automatically update content across Practice, Resources, and Videos pages
                     </p>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {userSkills.map((skill, index) => (
-                        <motion.span
-                          key={index}
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="px-3 py-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg text-sm font-medium flex items-center gap-2"
-                        >
-                          {skill}
-                          <button
-                            onClick={() => removeSkill(skill)}
-                            className="w-4 h-4 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors text-xs"
-                          >
-                            ×
-                          </button>
-                        </motion.span>
-                      ))}
-                    </div>
                     
-                    <div className="flex gap-2 mb-4">
-                      <input
-                        type="text"
-                        value={newSkill}
-                        onChange={(e) => setNewSkill(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && addSkill()}
-                        placeholder="Add a skill (e.g., React, Python, Node.js)"
-                        className="flex-1 p-3 rounded-xl text-sm outline-none"
-                        style={{ 
-                          background: isDark ? '#0A0A0F' : '#FAFAFA',
-                          border: '1px solid ' + border,
-                          color: text
-                        }}
-                      />
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={addSkill}
-                        className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all"
-                      >
-                        Add
-                      </motion.button>
-                    </div>
-
-                    <div>
-                      <p className="text-sm font-medium mb-2" style={{ color: text }}>Popular Skills</p>
-                      <div className="flex flex-wrap gap-2">
-                        {popularSkills.filter(skill => !userSkills.includes(skill)).map((skill) => (
+                    {loadingProfile ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: accent }} />
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {skills.map((skill, index) => (
+                            <motion.span
+                              key={index}
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              className="px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2"
+                              style={{
+                                background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
+                                color: 'white'
+                              }}
+                            >
+                              {skill}
+                              <button
+                                onClick={() => removeSkill(skill)}
+                                className="w-4 h-4 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </motion.span>
+                          ))}
+                        </div>
+                        
+                        <div className="flex gap-2 mb-4">
+                          <input
+                            type="text"
+                            value={newSkill}
+                            onChange={(e) => setNewSkill(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && addSkill()}
+                            placeholder="Add a skill (e.g., React, Python, Node.js)"
+                            className="flex-1 p-3 rounded-xl text-sm outline-none"
+                            style={{ 
+                              background: isDark ? '#0A0A0F' : '#FAFAFA',
+                              border: '1px solid ' + border,
+                              color: text
+                            }}
+                          />
                           <motion.button
-                            key={skill}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            onClick={() => addUserSkill(skill)}
-                            className="px-3 py-1 rounded-lg text-sm font-medium transition-all"
+                            onClick={addSkill}
+                            className="px-6 py-3 rounded-xl font-semibold text-white transition-all flex items-center gap-2"
                             style={{
-                              background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-                              color: muted,
-                              border: '1px solid ' + border
+                              background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)'
                             }}
                           >
-                            + {skill}
+                            <Plus className="w-4 h-4" />
+                            Add
                           </motion.button>
-                        ))}
-                      </div>
-                    </div>
+                        </div>
+
+                        <div>
+                          <p className="text-sm font-medium mb-2" style={{ color: text }}>Popular Skills</p>
+                          <div className="flex flex-wrap gap-2">
+                            {popularSkills.filter(skill => !skills.includes(skill)).map((skill) => (
+                              <motion.button
+                                key={skill}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => addPopularSkill(skill)}
+                                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1"
+                                style={{
+                                  background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                                  color: muted,
+                                  border: '1px solid ' + border
+                                }}
+                              >
+                                <Plus className="w-3 h-3" />
+                                {skill}
+                              </motion.button>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               )}

@@ -66,14 +66,22 @@ export default function VideosPage() {
   useEffect(() => {
     async function fetchUserProfile() {
       if (user) {
-        const { data } = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user.id}`).then(r => r.json())
-        if (data?.profile) {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user.id}`)
+        const data = await response.json()
+        if (data.success && data.profile) {
           setUserProfile(data.profile)
           setCareerGoal(data.profile.career_goal || '')
         }
       }
     }
     fetchUserProfile()
+    
+    // Listen for skills updates from settings page
+    const handleSkillsUpdate = () => {
+      fetchUserProfile()
+    }
+    window.addEventListener('skillsUpdated', handleSkillsUpdate)
+    return () => window.removeEventListener('skillsUpdated', handleSkillsUpdate)
   }, [user])
 
   // Get career-specific topics
