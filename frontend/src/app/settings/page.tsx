@@ -60,23 +60,48 @@ export default function SettingsPage() {
           
           if (data.success && data.profile) {
             setProfile({
-              fullName: data.profile.full_name || '',
+              fullName: data.profile.full_name || onboardingData.fullName || '',
               email: data.profile.email || user.email || '',
-              careerGoal: data.profile.career_goal || '',
-              experienceLevel: data.profile.experience_level || 'beginner',
+              careerGoal: data.profile.career_goal || onboardingData.careerGoal || '',
+              experienceLevel: data.profile.experience_level || onboardingData.experienceLevel || 'beginner',
             })
             setLearning({
-              hoursPerWeek: data.profile.hours_per_week || 10,
-              learningStyle: data.profile.learning_style || 'mixed',
+              hoursPerWeek: data.profile.hours_per_week || onboardingData.hoursPerWeek || 10,
+              learningStyle: data.profile.learning_style || onboardingData.learningStyle || 'mixed',
               notifications: true,
             })
-            const userSkills = Array.isArray(data.profile.skills) ? data.profile.skills : []
+            const userSkills = Array.isArray(data.profile.skills) ? data.profile.skills : (onboardingData.skills || [])
             console.log('Setting skills:', userSkills)
             setSkills(userSkills)
             setUserSkills(userSkills)
+          } else {
+            // Profile doesn't exist - use onboarding data as fallback
+            console.log('No profile found, using onboarding data')
+            setProfile({
+              fullName: onboardingData.fullName || '',
+              email: user.email || '',
+              careerGoal: onboardingData.careerGoal || '',
+              experienceLevel: onboardingData.experienceLevel || 'beginner',
+            })
+            setLearning({
+              hoursPerWeek: onboardingData.hoursPerWeek || 10,
+              learningStyle: onboardingData.learningStyle || 'mixed',
+              notifications: true,
+            })
+            setSkills(onboardingData.skills || [])
+            setUserSkills(onboardingData.skills || [])
           }
         } catch (error) {
           console.error('Error fetching profile:', error)
+          // Fallback to onboarding data on error
+          setProfile({
+            fullName: onboardingData.fullName || '',
+            email: user.email || '',
+            careerGoal: onboardingData.careerGoal || '',
+            experienceLevel: onboardingData.experienceLevel || 'beginner',
+          })
+          setSkills(onboardingData.skills || [])
+          setUserSkills(onboardingData.skills || [])
         } finally {
           setLoadingProfile(false)
         }
@@ -85,7 +110,7 @@ export default function SettingsPage() {
       }
     }
     fetchProfile()
-  }, [user, setUserSkills])
+  }, [user, setUserSkills, onboardingData])
 
   const addSkill = async () => {
     if (newSkill.trim() && !skills.includes(newSkill.trim())) {
