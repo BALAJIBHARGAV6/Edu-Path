@@ -99,8 +99,8 @@ export default function SettingsPage() {
   }, [user])
 
   // Add skill
-  const addSkill = async () => {
-    const skillToAdd = newSkill.trim()
+  const addSkill = async (skillName?: string) => {
+    const skillToAdd = (skillName || newSkill).trim()
     
     if (!skillToAdd) return
     if (skills.includes(skillToAdd)) {
@@ -302,7 +302,7 @@ export default function SettingsPage() {
                         className="flex-1 p-3 rounded-xl"
                         style={{ background: isDark ? '#0A0A0F' : '#FAFAFA', border: '1px solid ' + border, color: text }}
                       />
-                      <button onClick={addSkill} disabled={addingSkill} className="px-6 py-3 rounded-xl font-semibold text-white flex items-center gap-2" style={{ background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)' }}>
+                      <button onClick={() => addSkill()} disabled={addingSkill} className="px-6 py-3 rounded-xl font-semibold text-white flex items-center gap-2" style={{ background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)' }}>
                         {addingSkill ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                         Add
                       </button>
@@ -310,7 +310,7 @@ export default function SettingsPage() {
 
                     <div className="flex flex-wrap gap-2">
                       {popularSkills.filter(s => !skills.includes(s)).slice(0, 8).map((skill) => (
-                        <button key={skill} onClick={() => { setNewSkill(skill); addSkill(); setNewSkill('') }} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', color: muted }}>
+                        <button key={skill} onClick={() => addSkill(skill)} className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105" style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', color: muted }}>
                           <Plus className="w-3 h-3 inline mr-1" />{skill}
                         </button>
                       ))}
