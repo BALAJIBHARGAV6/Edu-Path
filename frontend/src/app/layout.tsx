@@ -49,32 +49,32 @@ export default function RootLayout({
               <Navbar />
               <main>{children}</main>
               <Toaster 
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                className: 'glass-strong',
-                style: {
-                  background: 'rgb(var(--card))',
-                  border: '1px solid rgb(var(--border))',
-                  borderRadius: '12px',
-                  color: 'rgb(var(--foreground))',
-                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2)',
-                },
-                success: {
-                  iconTheme: {
-                    primary: '#10b981',
-                    secondary: '#fff',
+                position="top-right"
+                toastOptions={{
+                  duration: 4000,
+                  className: 'glass-strong',
+                  style: {
+                    background: 'rgb(var(--card))',
+                    border: '1px solid rgb(var(--border))',
+                    borderRadius: '12px',
+                    color: 'rgb(var(--foreground))',
+                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2)',
                   },
-                },
-                error: {
-                  iconTheme: {
-                    primary: '#ef4444',
-                    secondary: '#fff',
+                  success: {
+                    iconTheme: {
+                      primary: '#10b981',
+                      secondary: '#fff',
+                    },
                   },
-                },
-              }}
+                  error: {
+                    iconTheme: {
+                      primary: '#ef4444',
+                      secondary: '#fff',
+                    },
+                  },
+                }}
+              />
             </UserProfileProvider>
-            />
           </AuthProvider>
         </ThemeProvider>
       </body>
