@@ -96,15 +96,28 @@ router.post('/profile', async (req: Request, res: Response) => {
 router.get('/profile/:userId', async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
+    
+    console.log('[PROFILE_FETCH] 🔍 Fetching profile for user:', userId);
+    console.log('[PROFILE_FETCH] 🔑 Service role key exists:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
 
     // Get user profile
     const { data: profile, error } = await supabaseAdmin
       .from('user_profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
-    if (error) throw error;
+    console.log('[PROFILE_FETCH] Profile query result:', { profile, error });
+
+    if (error) {
+      console.error('[PROFILE_FETCH] ❌ Error:', error);
+      throw error;
+    }
+    
+    if (!profile) {
+      console.log('[PROFILE_FETCH] ⚠️ No profile found for user');
+      return res.status(404).json({ success: false, error: 'Profile not found' });
+    }
 
     // Get user skills from user_skills table
     console.log('[SKILLS_FETCH] Fetching skills for user:', userId);
