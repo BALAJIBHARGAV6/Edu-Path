@@ -41,8 +41,9 @@ export default function SignupPage() {
       return
     }
 
-    toast.success('Account created! Please check your email to verify.')
-    router.push('/auth/login')
+    toast.success('Account created successfully! Welcome to EduPath.')
+    // Redirect new users directly to onboarding
+    router.push('/onboarding')
   }
 
   return (
