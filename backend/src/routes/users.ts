@@ -3,13 +3,10 @@ import { supabaseAdmin } from '../config/supabase';
 
 const router = Router();
 
-// Create or update user profile
+// Create or update user profile - OPTIMIZED
 router.post('/profile', async (req: Request, res: Response) => {
   try {
     const { id, fullName, email, careerGoal, experienceLevel, learningStyle, learningPace, hoursPerWeek, preferredContent, skills } = req.body;
-
-    console.log('Creating/updating profile for user:', id);
-    console.log('Profile data:', { fullName, email, careerGoal, experienceLevel, learningStyle, hoursPerWeek });
 
     // Upsert user profile
     const { data, error } = await supabaseAdmin
@@ -31,162 +28,108 @@ router.post('/profile', async (req: Request, res: Response) => {
       .select()
       .single();
 
-    if (error) {
-      console.error('Error upserting profile:', error);
-      throw error;
-    }
+    if (error) throw error;
 
-    console.log('Profile saved successfully:', data.id);
-
-    // Save skills to user_skills table
+    // Handle skills update asynchronously - don't block response
     if (skills && Array.isArray(skills) && skills.length > 0) {
-      console.log('[SKILLS_SAVE] Attempting to save skills:', skills);
-      console.log('[SKILLS_SAVE] User ID:', id);
-      
-      // First, delete existing skills for this user
-      const { error: deleteError } = await supabaseAdmin
-        .from('user_skills')
-        .delete()
-        .eq('user_id', id);
-
-      if (deleteError) {
-        console.error('[SKILLS_SAVE] Error deleting old skills:', deleteError);
-      } else {
-        console.log('[SKILLS_SAVE] Old skills deleted successfully');
-      }
-
-      // Then insert new skills
-      const skillsToInsert = skills.map(skill => ({
-        user_id: id,
-        skill_name: skill,
-        proficiency_level: experienceLevel || 'beginner',
-      }));
-
-      console.log('[SKILLS_SAVE] Skills to insert:', skillsToInsert);
-
-      const { error: skillsError, data: insertedSkills } = await supabaseAdmin
-        .from('user_skills')
-        .insert(skillsToInsert)
-        .select();
-
-      if (skillsError) {
-        console.error('[SKILLS_SAVE] ❌ Error saving skills:', skillsError);
-        console.error('[SKILLS_SAVE] Error details:', JSON.stringify(skillsError, null, 2));
-        // Don't fail the request if skills save fails
-      } else {
-        console.log('[SKILLS_SAVE] ✅ Skills saved successfully:', insertedSkills);
-        console.log('[SKILLS_SAVE] Total skills inserted:', insertedSkills?.length || 0);
-      }
-    } else {
-      console.log('[SKILLS_SAVE] No skills provided or empty array');
+      // Fire and forget - let skills update in background
+      setImmediate(async () => {
+        try {
+          // Delete old skills and insert new ones
+          await supabaseAdmin.from('user_skills').delete().eq('user_id', id);
+          
+          const skillsToInsert = skills.map(skill => ({
+            user_id: id,
+            skill_name: skill,
+            proficiency_level: experienceLevel || 'beginner',
+          }));
+          
+          await supabaseAdmin.from('user_skills').insert(skillsToInsert);
+        } catch (err) {
+          console.error('Background skills update error:', err);
+        }
+      });
     }
 
+    // Return immediately without waiting for skills
     res.json({ success: true, profile: data });
   } catch (error: any) {
-    console.error('Error saving profile:', error);
+    console.error('Profile save error:', error);
     res.status(500).json({ 
       success: false, 
-      error: 'Failed to save profile',
-      details: error.message || error.toString()
+      error: 'Failed to save profile'
     });
   }
 });
 
-// Get user profile
+// Get user profile - OPTIMIZED for speed
 router.get('/profile/:userId', async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
+
+    // PARALLEL queries for maximum speed - fetch profile and skills simultaneously
+    const [profileResult, skillsResult] = await Promise.all([
+      supabaseAdmin
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle(),
+      supabaseAdmin
+        .from('user_skills')
+        .select('skill_name')
+        .eq('user_id', userId)
+    ]);
+
+    if (profileResult.error) throw profileResult.error;
     
-    console.log('[PROFILE_FETCH] 🔍 Fetching profile for user:', userId);
-    console.log('[PROFILE_FETCH] 🔑 Service role key exists:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
-
-    // Get user profile
-    const { data: profile, error } = await supabaseAdmin
-      .from('user_profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
-
-    console.log('[PROFILE_FETCH] Profile query result:', { profile, error });
-
-    if (error) {
-      console.error('[PROFILE_FETCH] ❌ Error:', error);
-      throw error;
-    }
-    
-    if (!profile) {
-      console.log('[PROFILE_FETCH] ⚠️ No profile found for user');
+    if (!profileResult.data) {
       return res.status(404).json({ success: false, error: 'Profile not found' });
     }
 
-    // Get user skills from user_skills table
-    console.log('[SKILLS_FETCH] Fetching skills for user:', userId);
-    const { data: skills, error: skillsError } = await supabaseAdmin
-      .from('user_skills')
-      .select('skill_name')
-      .eq('user_id', userId);
-
-    if (skillsError) {
-      console.error('[SKILLS_FETCH] ❌ Error fetching skills:', skillsError);
-      console.error('[SKILLS_FETCH] Error details:', JSON.stringify(skillsError, null, 2));
-    } else {
-      console.log('[SKILLS_FETCH] ✅ Skills fetched:', skills);
-      console.log('[SKILLS_FETCH] Total skills count:', skills?.length || 0);
-    }
-
-    // Add skills array to profile
+    // Combine results - skills query errors are non-fatal
     const profileWithSkills = {
-      ...profile,
-      skills: skills ? skills.map(s => s.skill_name) : []
+      ...profileResult.data,
+      skills: skillsResult.data ? skillsResult.data.map(s => s.skill_name) : []
     };
 
-    console.log('[SKILLS_FETCH] Final profile with skills:', profileWithSkills.skills);
+    // Cache for 30 seconds to reduce database load
+    res.set('Cache-Control', 'private, max-age=30');
     res.json({ success: true, profile: profileWithSkills });
   } catch (error) {
-    console.error('Error fetching profile:', error);
+    console.error('Profile fetch error:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch profile' });
   }
 });
 
-// Update user skills in profile
+// Update user skills in profile - OPTIMIZED
 router.put('/profile/:userId/skills', async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     const { skills } = req.body;
 
-    // Delete existing skills
-    await supabaseAdmin
-      .from('user_skills')
-      .delete()
-      .eq('user_id', userId);
+    // Delete and insert in background, return immediately
+    setImmediate(async () => {
+      try {
+        await supabaseAdmin.from('user_skills').delete().eq('user_id', userId);
+        
+        if (skills && Array.isArray(skills) && skills.length > 0) {
+          const skillsToInsert = skills.map(skill => ({
+            user_id: userId,
+            skill_name: skill,
+            proficiency_level: 'beginner',
+          }));
+          await supabaseAdmin.from('user_skills').insert(skillsToInsert);
+        }
+      } catch (err) {
+        console.error('Background skills update error:', err);
+      }
+    });
 
-    // Insert new skills if provided
-    if (skills && Array.isArray(skills) && skills.length > 0) {
-      const skillsToInsert = skills.map(skill => ({
-        user_id: userId,
-        skill_name: skill,
-        proficiency_level: 'beginner',
-      }));
-
-      const { error: insertError } = await supabaseAdmin
-        .from('user_skills')
-        .insert(skillsToInsert);
-
-      if (insertError) throw insertError;
-    }
-
-    // Get updated skills
-    const { data: updatedSkills, error: fetchError } = await supabaseAdmin
-      .from('user_skills')
-      .select('skill_name')
-      .eq('user_id', userId);
-
-    if (fetchError) throw fetchError;
-
+    // Return immediately with the skills the user sent (optimistic response)
     res.json({ 
       success: true, 
       profile: { 
-        skills: updatedSkills ? updatedSkills.map(s => s.skill_name) : [] 
+        skills: skills || [] 
       } 
     });
   } catch (error) {
