@@ -63,6 +63,10 @@ const videoLibrary: Record<string, any[]> = {
     { id: 27, title: 'Docker Tutorial for Beginners', channel: 'TechWorld with Nana', duration: '3:10:23', views: '2.1M', videoId: '3c-iBn73dDE', url: 'https://www.youtube.com/watch?v=3c-iBn73dDE' },
     { id: 28, title: 'Docker Crash Course', channel: 'Traversy Media', duration: '46:33', views: '1.5M', videoId: 'pg19Z8LL06w', url: 'https://www.youtube.com/watch?v=pg19Z8LL06w' },
   ],
+  'Kubernetes': [
+    { id: 41, title: 'Kubernetes Tutorial for Beginners', channel: 'TechWorld with Nana', duration: '3:43:31', views: '2.5M', videoId: 'X48VuDVv0do', url: 'https://www.youtube.com/watch?v=X48VuDVv0do' },
+    { id: 42, title: 'Kubernetes Crash Course', channel: 'freeCodeCamp', duration: '2:19:36', views: '1.2M', videoId: 's_o8dwzRlu4', url: 'https://www.youtube.com/watch?v=s_o8dwzRlu4' },
+  ],
   'AWS': [
     { id: 29, title: 'AWS Tutorial for Beginners', channel: 'freeCodeCamp', duration: '4:13:52', views: '1.8M', videoId: 'ulprqHHWlng', url: 'https://www.youtube.com/watch?v=ulprqHHWlng' },
     { id: 30, title: 'AWS Certified Cloud Practitioner', channel: 'freeCodeCamp', duration: '13:56:29', views: '3.2M', videoId: 'SOTamWNgDKc', url: 'https://www.youtube.com/watch?v=SOTamWNgDKc' },

@@ -19,7 +19,7 @@ const tabs = [
   { id: 'appearance', label:'Appearance', icon: Palette },
 ]
 
-const popularSkills = ['JavaScript', 'React', 'Node.js', 'TypeScript', 'Python', 'HTML', 'CSS', 'Git', 'MongoDB', 'SQL', 'Docker', 'AWS', 'Redux', 'Vue.js', 'Angular']
+const popularSkills = ['JavaScript', 'React', 'Node.js', 'TypeScript', 'Python', 'HTML', 'CSS', 'Git', 'MongoDB', 'SQL', 'Docker', 'Kubernetes', 'AWS', 'Redux', 'Vue.js', 'Angular']
 
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme()
