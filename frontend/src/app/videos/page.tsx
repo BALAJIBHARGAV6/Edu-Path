@@ -96,39 +96,15 @@ const videoLibrary: Record<string, any[]> = {
 
 export default function VideosPage() {
   const { theme } = useTheme()
-  const { currentRoadmap } = useStore()
   const { user } = useAuth()
+  const { skills: userSkills, profile: userProfile } = useUserProfile()
   const router = useRouter()
   const isDark = theme === 'dark'
   const [search, setSearch] = useState('')
   const [selectedTopic, setSelectedTopic] = useState<string>('All')
-  const [userProfile, setUserProfile] = useState<any>(null)
-  const [careerGoal, setCareerGoal] = useState<string>('')
 
-  // Fetch user profile to get career goal
-  useEffect(() => {
-    async function fetchUserProfile() {
-      if (user) {
-        console.log('[Videos] Fetching profile for user:', user.id)
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user.id}`)
-        const data = await response.json()
-        console.log('[Videos] Profile response:', data)
-        if (data.success && data.profile) {
-          console.log('[Videos] Skills from profile:', data.profile.skills)
-          setUserProfile(data.profile)
-          setCareerGoal(data.profile.career_goal || '')
-        }
-      }
-    }
-    fetchUserProfile()
-    
-    // Listen for skills updates from settings page
-    const handleSkillsUpdate = () => {
-      fetchUserProfile()
-    }
-    window.addEventListener('skillsUpdated', handleSkillsUpdate)
-    return () => window.removeEventListener('skillsUpdated', handleSkillsUpdate)
-  }, [user])
+  // Get user's actual skills from shared context (already loaded in background)
+  const careerGoal = userProfile?.career_goal || ''
 
   // Get career-specific topics
   const getCareerTopics = (career: string): string[] => {
