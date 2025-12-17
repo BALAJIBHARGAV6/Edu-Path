@@ -10,6 +10,7 @@ import {
 import { useTheme } from '@/context/ThemeContext'
 import { useStore } from '@/lib/store'
 import { useAuth } from '@/context/AuthContext'
+import { useUserProfile } from '@/context/UserProfileContext'
 import PageWrapper from '@/components/PageWrapper'
 import GradientText from '@/components/GradientText'
 
@@ -142,26 +143,6 @@ export default function VideosPage() {
     return careerMap[career] || ['HTML', 'CSS', 'JavaScript', 'React', 'Node.js', 'TypeScript', 'Git']
   }
 
-  // Get career-specific video library
-  const getCareerVideos = (career: string): Record<string, any[]> => {
-    const topics = getCareerTopics(career)
-    const careerLibrary: Record<string, any[]> = {}
-    
-    topics.forEach(topic => {
-      if (videoLibrary[topic]) {
-        careerLibrary[topic] = videoLibrary[topic]
-      }
-    })
-    
-    // Always include general videos
-    careerLibrary['General'] = videoLibrary['General'] || []
-    
-    return careerLibrary
-  }
-
-  // Get user's actual skills from profile
-  const userSkills = Array.isArray(userProfile?.skills) ? userProfile.skills : []
-  
   // ONLY show videos for user's actual skills - no fallback
   const getVideosForSkills = (): Record<string, any[]> => {
     if (userSkills.length > 0) {

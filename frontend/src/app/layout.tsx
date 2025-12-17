@@ -4,6 +4,7 @@ import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from '@/context/AuthContext'
 import { ThemeProvider } from '@/context/ThemeContext'
+import { UserProfileProvider } from '@/context/UserProfileContext'
 import Navbar from '@/components/Navbar'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -44,9 +45,10 @@ export default function RootLayout({
       <body className={`${inter.className} antialiased`}>
         <ThemeProvider>
           <AuthProvider>
-            <Navbar />
-            <main>{children}</main>
-            <Toaster 
+            <UserProfileProvider>
+              <Navbar />
+              <main>{children}</main>
+              <Toaster 
               position="top-right"
               toastOptions={{
                 duration: 4000,
@@ -71,6 +73,7 @@ export default function RootLayout({
                   },
                 },
               }}
+            </UserProfileProvider>
             />
           </AuthProvider>
         </ThemeProvider>

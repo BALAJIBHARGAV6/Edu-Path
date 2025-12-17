@@ -11,6 +11,7 @@ import {
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
 import { useStore } from '@/lib/store'
+import { useUserProfile } from '@/context/UserProfileContext'
 import PageWrapper from '@/components/PageWrapper'
 import GradientText from '@/components/GradientText'
 import toast from 'react-hot-toast'
@@ -30,6 +31,7 @@ export default function PracticePage() {
   const { theme } = useTheme()
   const { user } = useAuth()
   const { currentRoadmap } = useStore()
+  const { skills: userActualSkills, profile: userProfile } = useUserProfile()
   const router = useRouter()
   const isDark = theme === 'dark'
   const [filter, setFilter] = useState<'all' | 'easy' | 'medium' | 'hard'>('all')
@@ -46,54 +48,10 @@ export default function PracticePage() {
   const [running, setRunning] = useState(false)
   const [loading, setLoading] = useState(false)
   const [challenges, setChallenges] = useState<any[]>([])
-  const [userProfile, setUserProfile] = useState<any>(null)
-  const [careerGoal, setCareerGoal] = useState<string>('')
-
-  // Fetch user profile to get career goal
-  useEffect(() => {
-    async function fetchUserProfile() {
-      if (user) {
-        console.log('[Practice] Fetching profile for user:', user.id)
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user.id}`)
-        const data = await response.json()
-        console.log('[Practice] Profile response:', data)
-        if (data.success && data.profile) {
-          console.log('[Practice] Skills from profile:', data.profile.skills)
-          setUserProfile(data.profile)
-          setCareerGoal(data.profile.career_goal || '')
-        }
-      }
-    }
-    fetchUserProfile()
-    
-    // Listen for skills updates from settings page
-    const handleSkillsUpdate = () => {
-      fetchUserProfile()
-    }
-    window.addEventListener('skillsUpdated', handleSkillsUpdate)
-    return () => window.removeEventListener('skillsUpdated', handleSkillsUpdate)
-  }, [user])
-
-  // Get career-specific topics
-  const getCareerTopics = (career: string): string[] => {
-    const careerMap: Record<string, string[]> = {
-      'Frontend Developer': ['JavaScript', 'React', 'TypeScript', 'CSS', 'HTML', 'Algorithms'],
-      'Backend Developer': ['Node.js', 'Python', 'Java', 'Algorithms', 'Database', 'APIs'],
-      'Full Stack Developer': ['JavaScript', 'React', 'Node.js', 'TypeScript', 'Algorithms', 'Database'],
-      'Mobile Developer': ['JavaScript', 'React Native', 'Flutter', 'Algorithms', 'UI/UX'],
-      'DevOps Engineer': ['Python', 'Bash', 'Docker', 'Kubernetes', 'Cloud', 'Algorithms'],
-      'Data Scientist': ['Python', 'Algorithms', 'Statistics', 'Machine Learning', 'Data Structures']
-    }
-    return careerMap[career] || ['JavaScript', 'React', 'TypeScript', 'Node.js', 'Python', 'Algorithms']
-  }
-
-  // Get user's actual skills from profile - ONLY use these, no fallback
-  const userActualSkills = Array.isArray(userProfile?.skills) && userProfile.skills.length > 0 
-    ? userProfile.skills 
-    : []
+  
+  // Get career goal from shared context (already loaded)
+  const careerGoal = userProfile?.career_goal || ''
   const topics = userActualSkills
-
-  // Only fetch challenges if user has skills
   const shouldFetchChallenges = userActualSkills.length > 0
 
   // Cache challenges to avoid refetching
