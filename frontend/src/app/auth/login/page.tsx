@@ -47,7 +47,7 @@ export default function LoginPage() {
         console.log('🔍 [LOGIN] Checking profile for user:', session.user.id)
         
         // Use backend API which has proper service role access
-        const response = await fetch(`http://localhost:5000/api/users/profile/${session.user.id}`)
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${session.user.id}`)
         
         if (response.ok) {
           const result = await response.json()
