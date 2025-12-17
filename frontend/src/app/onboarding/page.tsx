@@ -115,6 +115,10 @@ export default function OnboardingPage() {
         throw new Error(profileData.error || 'Failed to save profile')
       }
 
+      // Trigger profile refresh in UserProfileContext so skills are available immediately
+      window.dispatchEvent(new Event('skillsUpdated'))
+      console.log('Dispatched skillsUpdated event after onboarding')
+
       // Generate roadmap with saved profile data
       console.log('Generating roadmap...')
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/roadmap/generate`, {
