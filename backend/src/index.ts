@@ -26,7 +26,8 @@ app.use(cors({
         'https://edu-path.vercel.app',
         'https://edu-path-learner.vercel.app',
         'https://edu-path-balajibhargav6.vercel.app',
-        'https://edu-path-learn.vercel.app'
+        'https://edu-path-learn.vercel.app',
+        'https://edu-path.learner.vercel.app'
       ]
     : 'http://localhost:3000',
   credentials: true,

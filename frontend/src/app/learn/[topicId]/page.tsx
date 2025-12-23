@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { useStore, Topic, Milestone } from '@/lib/store'
 import { useAuth } from '@/context/AuthContext'
+import { API_URL } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
 interface YouTubeVideo {
@@ -73,7 +74,7 @@ export default function LearnTopicPage() {
     setLoadingVideos(true)
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/videos/search?query=${encodeURIComponent(topicName + ' tutorial')}`
+        `${API_URL}/api/videos/search?query=${encodeURIComponent(topicName + ' tutorial')}`
       )
       const data = await response.json()
       if (data.success) {
@@ -91,7 +92,7 @@ export default function LearnTopicPage() {
     
     setGeneratingNotes(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notes/generate`, {
+      const response = await fetch(`${API_URL}/api/notes/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

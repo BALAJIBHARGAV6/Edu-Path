@@ -9,6 +9,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useTheme } from '@/context/ThemeContext'
 import { useStore } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
+import { API_URL } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
@@ -47,7 +48,7 @@ export default function LoginPage() {
         console.log('🔍 [LOGIN] Checking profile for user:', session.user.id)
         
         // Use backend API which has proper service role access
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${session.user.id}`)
+        const response = await fetch(`${API_URL}/api/users/profile/${session.user.id}`)
         
         if (response.ok) {
           const result = await response.json()

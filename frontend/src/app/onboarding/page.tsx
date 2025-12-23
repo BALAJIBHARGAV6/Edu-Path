@@ -11,6 +11,7 @@ import { useTheme } from '@/context/ThemeContext'
 import { supabase } from '@/lib/supabase'
 import PageWrapper from '@/components/PageWrapper'
 import Navbar from '@/components/Navbar'
+import { API_URL } from '@/lib/utils'
 
 const CAREER_GOALS = ['Frontend Developer', 'Backend Developer', 'Full Stack Developer', 'Mobile Developer', 'DevOps Engineer', 'Data Scientist']
 const EXPERIENCE: Array<'beginner' | 'intermediate' | 'advanced'> = ['beginner' as const, 'intermediate' as const, 'advanced' as const]
@@ -85,7 +86,7 @@ export default function OnboardingPage() {
       console.log('Form data:', formData)
 
       // Save user profile with all onboarding data including skills
-      const profileResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile`, {
+      const profileResponse = await fetch(`${API_URL}/api/users/profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -121,7 +122,7 @@ export default function OnboardingPage() {
 
       // Generate roadmap with saved profile data
       console.log('Generating roadmap...')
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/roadmap/generate`, {
+      const response = await fetch(`${API_URL}/api/roadmap/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

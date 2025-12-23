@@ -10,6 +10,7 @@ import {
 import { useAuth } from '@/context/AuthContext'
 import { useTheme } from '@/context/ThemeContext'
 import { useStore } from '@/lib/store'
+import { API_URL } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
 export default function TestPage() {
@@ -52,7 +53,7 @@ export default function TestPage() {
 
     setGenerating(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/practice/generate-test`, {
+      const response = await fetch(`${API_URL}/api/practice/generate-test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic, difficulty, questionCount: 5 })
@@ -84,7 +85,7 @@ export default function TestPage() {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/practice/evaluate-test`, {
+      const response = await fetch(`${API_URL}/api/practice/evaluate-test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

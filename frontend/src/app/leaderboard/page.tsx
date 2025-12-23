@@ -17,6 +17,7 @@ import {
 import { useTheme } from '@/context/ThemeContext'
 import PageWrapper from '@/components/PageWrapper'
 import GradientText from '@/components/GradientText'
+import { API_URL } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
 const timeFilters = [
@@ -44,7 +45,7 @@ export default function LeaderboardPage() {
     setLoading(true)
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/practice/leaderboard?timeFrame=${timeFrame}&limit=50`
+        `${API_URL}/api/practice/leaderboard?timeFrame=${timeFrame}&limit=50`
       )
       const data = await response.json()
       

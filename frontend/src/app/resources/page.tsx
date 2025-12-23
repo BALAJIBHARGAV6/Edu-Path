@@ -11,6 +11,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useStore } from '@/lib/store'
 import PageWrapper from '@/components/PageWrapper'
 import GradientText from '@/components/GradientText'
+import { API_URL } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
 const PRIMARY = '#3B82F6'
@@ -82,7 +83,7 @@ export default function ResourcesPage() {
     setActiveTab('notes')
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/resources/generate-notes`, {
+      const response = await fetch(`${API_URL}/api/resources/generate-notes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -177,7 +178,7 @@ export default function ResourcesPage() {
     }
 
     try {
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/resources/chat`
+      const apiUrl = `${API_URL}/api/resources/chat`
       console.log('Sending request to:', apiUrl)
       
       const response = await fetch(apiUrl, {

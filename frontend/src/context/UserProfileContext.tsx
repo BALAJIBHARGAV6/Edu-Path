@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useAuth } from './AuthContext'
+import { API_URL } from '@/lib/utils'
 
 interface UserProfile {
   id: string
@@ -43,7 +44,7 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user.id}`)
+      const response = await fetch(`${API_URL}/api/users/profile/${user.id}`)
       const data = await response.json()
       
       if (data.success && data.profile) {

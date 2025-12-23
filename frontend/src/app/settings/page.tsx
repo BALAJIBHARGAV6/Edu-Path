@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import PageWrapper from '@/components/PageWrapper'
 import GradientText from '@/components/GradientText'
+import { API_URL } from '@/lib/utils'
 
 const tabs = [
   { id: 'profile', label: 'Profile', icon: User },
@@ -60,7 +61,7 @@ export default function SettingsPage() {
         setLoading(true)
         
         console.log('[SETTINGS] 🔍 Fetching profile for:', userId)
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${userId}`)
+        const response = await fetch(`${API_URL}/api/users/profile/${userId}`)
         
         const data = await response.json()
         console.log('[SETTINGS] 📦 Profile response:', data)
@@ -114,7 +115,7 @@ export default function SettingsPage() {
       
       console.log('[SETTINGS] ➕ Adding:', skillToAdd)
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user?.id}/skills`, {
+      const response = await fetch(`${API_URL}/api/users/profile/${user?.id}/skills`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ skills: updatedSkills })
@@ -147,7 +148,7 @@ export default function SettingsPage() {
       
       console.log('[SETTINGS] ➖ Removing:', skillToRemove)
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user?.id}/skills`, {
+      const response = await fetch(`${API_URL}/api/users/profile/${user?.id}/skills`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ skills: updatedSkills })
@@ -172,7 +173,7 @@ export default function SettingsPage() {
     try {
       setSaving(true)
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile`, {
+      const response = await fetch(`${API_URL}/api/users/profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

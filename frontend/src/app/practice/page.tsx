@@ -14,6 +14,7 @@ import { useStore } from '@/lib/store'
 import { useUserProfile } from '@/context/UserProfileContext'
 import PageWrapper from '@/components/PageWrapper'
 import GradientText from '@/components/GradientText'
+import { API_URL } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
 // Dynamically import Monaco Editor (client-side only)
@@ -75,7 +76,7 @@ export default function PracticePage() {
         count: '6'
       })
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/practice/challenges?${params}`)
+      const response = await fetch(`${API_URL}/api/practice/challenges?${params}`)
       const data = await response.json()
       
       if (data.success) {
@@ -113,7 +114,7 @@ export default function PracticePage() {
     setOutput(null)
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/practice/submit-solution`, {
+      const response = await fetch(`${API_URL}/api/practice/submit-solution`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

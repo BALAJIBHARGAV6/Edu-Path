@@ -15,6 +15,7 @@ import { useTheme } from '@/context/ThemeContext'
 import { supabase } from '@/lib/supabase'
 import PageWrapper from '@/components/PageWrapper'
 import GradientText from '@/components/GradientText'
+import { API_URL } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
 // Default starter concepts when no roadmap exists
@@ -49,7 +50,7 @@ export default function DashboardPage() {
       if (user) {
         try {
           // Fetch user profile with stats
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/${user.id}`)
+          const response = await fetch(`${API_URL}/api/users/profile/${user.id}`)
           const data = await response.json()
           
           if (data.success && data.profile) {

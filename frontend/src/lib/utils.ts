@@ -5,7 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+// Remove trailing slash from API URL to prevent double-slash issues
+export const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/+$/, '')
 
 export async function apiRequest<T>(
   endpoint: string,
