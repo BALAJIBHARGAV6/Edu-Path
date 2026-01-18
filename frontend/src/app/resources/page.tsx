@@ -26,7 +26,7 @@ interface Message {
 export default function ResourcesPage() {
   const { theme } = useTheme()
   const { user } = useAuth()
-  const { currentRoadmap } = useStore()
+  const { currentRoadmap, setCurrentRoadmap } = useStore()
   const isDark = theme === 'dark'
   
   const [search, setSearch] = useState('')
@@ -36,6 +36,7 @@ export default function ResourcesPage() {
   const [copied, setCopied] = useState(false)
   const [topics, setTopics] = useState<any[]>([])
   const [loadingTopics, setLoadingTopics] = useState(true)
+  const [loadingRoadmap, setLoadingRoadmap] = useState(true)
   
   // Chat states
   const [messages, setMessages] = useState<Message[]>([])
@@ -49,7 +50,42 @@ export default function ResourcesPage() {
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
-  // Extract topics from user's roadmap
+  // Load user's roadmap if not already loaded
+  useEffect(() => {
+    const loadRoadmap = async () => {
+      if (!user || currentRoadmap) {
+        setLoadingRoadmap(false)
+        return
+      }
+
+      try {
+        const { createClient } = await import('@supabase/supabase-js')
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        )
+
+        const { data: roadmaps, error } = await supabase
+          .from('roadmaps')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+
+        if (!error && roadmaps && roadmaps.length > 0) {
+          setCurrentRoadmap(roadmaps[0])
+        }
+      } catch (error) {
+        console.error('Error loading roadmap:', error)
+      } finally {
+        setLoadingRoadmap(false)
+      }
+    }
+
+    loadRoadmap()
+  }, [user, currentRoadmap, setCurrentRoadmap])
+
+  // Extract topics from user's roadmap or provide fallback topics
   useEffect(() => {
     if (currentRoadmap) {
       const milestones = currentRoadmap.milestones || currentRoadmap.ai_generated_path?.milestones || []
@@ -68,9 +104,22 @@ export default function ResourcesPage() {
       })
       
       setTopics(extractedTopics.slice(0, 20)) // Limit to 20 topics
+    } else if (!loadingRoadmap) {
+      // Provide fallback topics for demonstration
+      const fallbackTopics = [
+        { id: 1, title: 'JavaScript Fundamentals', category: 'Programming', description: 'Variables, functions, and control structures' },
+        { id: 2, title: 'React Components', category: 'Frontend', description: 'Building reusable UI components' },
+        { id: 3, title: 'API Integration', category: 'Backend', description: 'Connecting frontend to backend services' },
+        { id: 4, title: 'Database Design', category: 'Database', description: 'Designing efficient database schemas' },
+        { id: 5, title: 'CSS Flexbox', category: 'Styling', description: 'Modern CSS layout techniques' },
+        { id: 6, title: 'Node.js Basics', category: 'Backend', description: 'Server-side JavaScript development' },
+        { id: 7, title: 'Git Version Control', category: 'Tools', description: 'Managing code with Git' },
+        { id: 8, title: 'Responsive Design', category: 'Frontend', description: 'Creating mobile-friendly layouts' }
+      ]
+      setTopics(fallbackTopics)
     }
     setLoadingTopics(false)
-  }, [currentRoadmap])
+  }, [currentRoadmap, loadingRoadmap])
 
   const filteredTopics = topics.filter(t => 
     t.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -236,31 +285,6 @@ export default function ResourcesPage() {
   const border = isDark ? '#27272A' : '#E4E4E7'
   const accent = '#2563EB'
 
-  // Show message if no roadmap
-  if (!currentRoadmap && !loadingTopics) {
-    return (
-      <PageWrapper>
-        <div className="min-h-screen pt-16 sm:pt-20 md:pt-24 flex items-center justify-center" style={{ background: isDark ? '#0A0A0F' : '#F8FFFE' }}>
-          <div className="text-center max-w-lg px-4">
-            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-              className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg mx-auto"
-            >
-              <FileText className="w-12 h-12 text-white" />
-            </motion.div>
-            <h2 className="text-2xl font-bold mb-3" style={{ color: text }}>Generate Your Roadmap First</h2>
-            <p className="text-base mb-6" style={{ color: muted }}>
-              Create a personalized roadmap to get AI-powered study notes for your learning topics.
-            </p>
-            <a href="/roadmaps" className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium hover:scale-105 transition-transform">
-              <Sparkles className="w-5 h-5" />
-              Generate Roadmap
-            </a>
-          </div>
-        </div>
-      </PageWrapper>
-    )
-  }
-
   return (
     <PageWrapper>
       <div className="min-h-screen pt-16 sm:pt-20 md:pt-24" style={{ background: isDark ? '#0A0A0F' : '#F8FFFE' }}>
@@ -300,9 +324,11 @@ export default function ResourcesPage() {
                 <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
               <div>
-                <h3 className="font-bold text-white text-sm sm:text-base">Your Learning Topics</h3>
+                <h3 className="font-bold text-white text-sm sm:text-base">
+                  {currentRoadmap ? 'Your Learning Topics' : 'Popular Learning Topics'}
+                </h3>
                 <p className="text-blue-100 text-xs sm:text-sm">
-                  {topics.length} topics from your roadmap ready for AI notes
+                  {topics.length} topics {currentRoadmap ? 'from your roadmap' : 'available'} ready for AI notes
                 </p>
               </div>
             </div>
@@ -333,7 +359,20 @@ export default function ResourcesPage() {
             {/* Topics List */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-1">
               <h3 className="text-xs uppercase tracking-wider font-bold mb-3 opacity-60" style={{ color: text }}>Topics</h3>
-              {filteredTopics.map((topic, i) => (
+              {loadingTopics ? (
+                <div className="space-y-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="h-12 rounded-lg" style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }} />
+                    </div>
+                  ))}
+                </div>
+              ) : filteredTopics.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-sm" style={{ color: muted }}>No topics found</p>
+                </div>
+              ) : (
+                filteredTopics.map((topic, i) => (
                 <motion.button
                   key={topic.id}
                   initial={{ opacity: 0, x: -20 }}
@@ -369,7 +408,8 @@ export default function ResourcesPage() {
                     <div className="w-2 h-2 rounded-full bg-green-400" />
                   )}
                 </motion.button>
-              ))}
+              ))
+              )}
             </motion.div>
           </div>
 
